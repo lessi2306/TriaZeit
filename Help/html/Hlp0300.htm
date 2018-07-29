@@ -1,0 +1,94 @@
+<html>
+<head>
+<Title>Zeitnahme</Title>
+<link rel="stylesheet" type="text/css" href="TriaHilfe.css">
+<meta name="author" content="Gerhard Selten">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<Object type="application/x-oleobject" classid="clsid:1e2a7bd0-dab9-11d0-b93a-00c04fc99f9e">
+	<param name="Keyword" value="Zeitnahme">
+	<param name="Keyword" value="Startnummer">
+	<param name="Keyword" value="RFID-Modus">
+	<param name="Keyword" value="Startzeit">
+	<param name="Keyword" value="Systemzeit">
+	<param name="Keyword" value="Zeiterfassung">
+	<param name="Keyword" value="Stoppuhr-Modus">
+	<param name="Keyword" value="Uhrzeit-Modus">
+	<param name="Keyword" value="Sekunden">
+	<param name="Keyword" value="Zehntelsekunden">
+	<param name="Keyword" value="Hundertstelsekunden">
+</OBJECT>
+<h1>Zeitnahme</h1>
+<br>
+<h2>Startnummer-Modus</h2>
+<p>
+Der nachfolgende Screenshot zeigt die Zeitnahme im Startnummer-Modus.</p>
+<p>
+<img src="img/trzshot.gif" alt="TrzShot" width="349" height="383" border="0"></p>
+<p>
+Auf der Tastatur eingegebene Ziffern werden in das obere Startnummer-Feld übertragen und bei Betätigung der Eingabe-Taste (alternativ auch Funktionstaste F5 oder "Zeitnahme"-Schaltfläche) zusammen mit der im benachbarten Feld angegebenen Uhrzeit in die Tabelle übernommen.<br>
+Der letzte Eintrag wird in der Tabelle hervorgehoben dargestellt.</p>
+<p>
+Wird keine Startnummer eingetragen, weil dazu die Zeit fehlt oder die Startnummer nicht erkennbar ist, dann wird die aktuelle Zeit mit der Startnummer 0 gespeichert. Die richtige Nummer kann dann später in der Tabelle nachgetragen werden, z.B. durch Abgleich mit einer Startnummerndatei (siehe <a href="Hlp0500.htm">Startnummern abgleichen</a>).<br>
+Unvollständige Einträge mit Startnummer 0 oder ohne Zeit werden beim Einlesen in Tria grundsätzlich ignoriert.</p>
+<p>
+Durch Anklicken der Spaltenüberschriften in der Tabelle (oder dem Menüpunkt "Ansicht") können die Einträge in der Tabelle nach Startnummer oder Zeit sortiert werden, sowohl auf- als absteigend.</p>
+<p>
+Unter dem Menüpunkt "Extras/Optionen" kann eine Zeitmessung in Sekunden, Zehntelsekunden oder Hundertstelsekunden gewählt werden.</p>
+<p>
+In der Regel wird die aktuelle Tagesuhrzeit für die Zeitnahme verwendet. Sie entspricht der Systemzeit des Rechners und kann über die Uhr des Windows-Betriebssystems eingestellt werden.</p>
+<p>
+In Tria werden die Teilnehmerzeiten aus der Differenz von mit TriaZeit gemessener Uhrzeit und in Tria einmal pro Startgruppe eingetragener Startzeit berechnet. Damit ist es möglich, bei komplexeren Veranstaltungen die Zeiten von Teilnehmern aus verschiedenen Startgruppen mit unterschiedlichen Startzeiten parallel an der gleichen Station zu erfassen.</p>
+<p>
+Weil nur die Uhrzeit und kein Datum erfasst wird, ist die Zeitmessung mit TriaZeit (und Tria) auf maximal 24 Stunden begrenzt. Das gilt auch für Wettkämpfe, die nachts stattfinden. Wird die 24 Uhr-Grenze überschritten, dann addiert Tria automatisch 24 Stunden zur Differenz von Start- und Stopp-Uhrzeit.</p>
+<br>
+<h2>RFID-Modus</h2>
+<p>
+Im RFID-Modus werden die Teilnehmer nicht durch ihre Startnummern sondern durch RFID Chip Codes (Transponder-Nummer) identifiziert.</p>
+<p>
+Diese RFID-Codes werden sinnvollerweise mit Hilfe eines USB RFID-Readers automatisch erzeugt. Dieser sollte eine Tastatur-Simulation unterstützen und als zweite Tastatur am Rechner angeschlossen werden. Beim Zieleinlauf generiert der Reader den in Tastaturzeichen umgewandelten RFID-Code gefolgt von einem abschließendem Enter. Wenn das entsprechende Eingabefeld in TriaZeit vorher fokussiert ist, wird dieser Code in dem Feld eingetragen und mit der aktuellen Uhrzeit in die Tabelle übernommen.</p>
+<p>
+Damit ist eine voll-automatische Zeitnahme möglich.</p>
+<p>
+Der nachfolgende Screenshot zeigt die Zeitnahme im RFID-Modus.</p>
+<p>
+<img src="img/rfid.gif" alt="Rfid" width="411" height="364" border="0"></p>
+<p>
+Eine nachträgliche Bearbeitung in der Tabelle ist wie im Startnummer-Modus möglich.<br>
+Die im nächsten Kapitel beschriebenen zusätzlichen Spalten mit Teilnehmernamen und Anzahl Zeitnahmen sind im RFID-Modus nicht verfügbar.</p>
+<br>
+<h2>Erweiterte Darstellung</h2>
+<p>
+Im Startnummer-Modus können zusätzlich zur Startnummer und der erfassten Zeit optional weitere Informationen dargestellt werden:</p>
+<ul>
+<li>Die Gesamtzahl der Einträge mit dieser Startnummer.</li>
+<li>Der Name des mit dieser Startnummer gemeldeten Teilnehmers. Diese Daten können aus einer mit Tria erstellten Startliste importiert werden.</li>
+</ul>
+<p>
+Überschreitungen einer frei wählbaren Maximalzahl oder nicht registrierte Startnummern werden optisch und akustisch signalisiert.</p>
+<p>
+Der nachfolgende Screenshot zeigt TriaZeit mit beiden zusätzlichen Spalten.</p>
+<p>
+<img src="img/triazeit1.gif" alt="Screenshot TriaZeit1" width="574" height="466" border="0"></p>
+<p>
+Diese Zusatzinformationen können dabei helfen, Zahlendreher in Startnummern schneller zu erkennen.</p>
+<br>
+<h2>Stoppuhr-Modus</h2>
+<p>
+Alternativ zur Zeitmessung mit der Tages-Uhrzeit kann unter "Extras/Optionen" einen Stoppuhr-Modus gewählt werden. Hierbei wird eine ab dem Start laufende Zeit verwendet.</p>
+<p>
+Das folgende Bild zeigt diesen Modus in der Startposition, diesmal mit einer in Hundertstelsekunden dargestellten Zeit.</p>
+<p>
+<img src="img/triazeit2.gif" alt="TriaZeit2" width="349" height="371" border="0"></p>
+<p>
+Durch Betätigung der Eingabe-Taste (alternativ Funktionstaste F3 oder Schaltfläche "Start") läuft die Uhr los und gleichzeitig wird diese Schaltfläche zur Zeitnahme-Schaltfläche umfunktioniert. In der weiteren Funktion sind Uhrzeit- und Stoppuhr-Modus identisch.</p>
+<p>
+Die Startzeit muss nicht gleich 00:00:00 sein, sondern es kann vor dem Start eine beliebige Startzeit eingetragen werden. Dies kann z.B. nützlich sein wenn die Zeitmessung nicht beim Start aufgebaut ist und deshalb nicht synchron gestartet werden kann. Wenn der Start mit einer üblichen Stoppuhr durchgeführt wird, kann die TriaZeit-Zeitmessung später mit der Stoppuhr synchronisiert gestartet werden.<br>
+Die Stoppuhr kann über dem Menüpunkt "Zeitnahme" jederzeit angehalten und zurückgesetzt werden.</p>
+<p>
+<b>Hinweis:</b><br>
+Wenn TriaZeit im Stoppuhr-Modus betrieben wird, muss die TriaZeit-Startzeit (in der Regel 00:00:00) auch in Tria als Startzeit für die Startgruppe eingetragen werden und nicht die tatsächliche Start-Uhrzeit.<br>
+Tria betrachtet die eingelesenen Zeiten nämlich als Uhrzeiten und berechnet die Endzeiten der Teilnehmer aus der Differenz von der in Tria eingetragenen Start-Uhrzeit und die mit TriaZeit erfassten Stopp-Uhrzeiten.</p>
+</body>
+</html>

@@ -1,0 +1,887 @@
+unit TztDat;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ExtCtrls, StdCtrls,ShlObj,StrUtils,Math,
+  TztAllg;
+
+function  Speichern(DatName:String): Boolean;
+procedure DateiNeu(Pfad:String);
+procedure DateiOeffnen;
+procedure StartlisteDateiLaden(Pfad:String);
+function  DateiSpeichern: Boolean;
+function  DateiSpeichernUnter: Boolean;
+function  DateiKopieren: Boolean;
+function  DateiSichern: Boolean;
+procedure DateiAutoSpeichern;
+procedure ErstelleBackup;
+function  OpenFileDialog(const ADefExt, AFilter, AInitialDir: string;
+                         AFilterIndx:Integer; ATitle: string;
+                         var AFileName: string): Boolean;
+function  SaveFileDialog(const ADefExt, AFilter, AInitialDir, ATitle: string;
+                         var AFileName: string): Boolean;
+
+
+var
+  TztDatGeladen   : Boolean;
+  TztDatModified  : Boolean;
+  TztDatName      : String;
+
+const
+  cnTztDatNeu = 'Neu.trz';
+
+implementation
+
+uses TztMain,AllgFunc,AllgConst,VistaFix,TztStrtLst;
+
+//procedure DateiErstellen; forward;
+procedure DateiLesen; forward;
+procedure DateiSchliessen; forward;
+
+(******************************************************************************)
+procedure DateiNeu(Pfad:String);
+(******************************************************************************)
+// benutzt in DateiOeffnen und TztConfig/LadeKonfiguration
+var DirAlt : String;
+begin
+  DirAlt := '';
+  if TztDatGeladen then
+  begin
+    DirAlt := SysUtils.ExtractFileDir(TztDatName);
+    if not DateiSichern then Exit; // KEIN ABBRUCH, sondern weiter machen ohne speichern
+  end;
+
+  // DateiSchliessen
+  TztHauptDlg.StopPaint := true;
+  TztColl.Clear; // incl. Leerzeile
+  TztHauptDlg.UpdateStatusBar;
+  TztHauptDlg.TztGrid.CollectionUpdate;
+  TztHauptDlg.TztGrid.Invalidate;
+  TztDatName := '';
+  TztHauptDlg.Caption := Application.Title; // zuerst Dateiname in Caption löschen
+  TztDatGeladen  := false;
+  TztDatModified := false;
+  TztHauptDlg.StopPaint := false;
+  TztHauptDlg.Repaint; // damit leeres Grid gezeigt wird
+  TztHauptDlg.StopPaint := true;
+
+  try
+
+    try
+      if (Pfad<>'') and SysUtils.FileExists(Pfad) then
+      begin
+        // Datei laden
+        TztDatName := Pfad;
+        DateiLesen; //TztDatGeladen = true wenn OK
+      end;
+    finally
+      // auch bei Exception in DateiLesen
+      if not TztDatGeladen then
+      begin
+        if Pfad <> '' then // Fehler beim Lesen
+          with TztHauptDlg.MruListe do EntferneDatei(PfadIndex(Pfad));
+        if DirAlt = '' then // vorher war keine Datei geladen
+          DirAlt := GetSpecialFolder(CSIDL_DESKTOPDIRECTORY); // Desktop als default
+        TztDatName := DirAlt+'\'+cnTztDatNeu;
+        TztDatGeladen := true;
+      end;
+      SysUtils.SetCurrentDir(SysUtils.ExtractFileDir(TztDatName));
+      TztHauptDlg.Caption := Application.Title + '  -  '+ SysUtils.ExtractFileName(TztDatName);
+    end;
+
+  finally
+    with TztHauptDlg do
+    begin
+      // leeres Item am Ende, Zeitformat der neuen datei
+      if (TztColl.SortCount = 0) or not TztColl.SortItems[TztColl.SortCount-1].InitWert then
+        TztColl.AddItem(TTztObj.Create(nil,TztColl,oaNoAdd)); // leeres Item am Ende
+      TztGrid.CollectionUpdate;
+      StopPaint := false;
+      UpdateLayout; // wegen Zeitformat
+      TztGrid.Invalidate;
+      TztGrid.ItemIndex := 0; // TztGrid bekommt Focus
+      UpdateStatusBar;
+      Invalidate;
+    end;
+  end;
+end;
+
+(******************************************************************************)
+procedure DateiOeffnen;
+(******************************************************************************)
+var S,Pfad: String;
+begin
+  Pfad := '';
+  if TztDatGeladen then S := SysUtils.ExtractFileDir(TztDatName)
+                   else S := ''; // default
+  if OpenFileDialog('trz', //const DefExt: string
+                    'TriaZeit Dateien (*.trz)|*.trz|Alle Dateien (*.*)|*.*',//Filter: string
+                    S, //InitialDir: string
+                    1, // Type Trz Dateien
+                    'Öffnen',//Title: string
+                    Pfad) then //var FileName: string
+  begin
+    TztHauptDlg.Repaint;
+    DateiNeu(Pfad);
+    if TztDatName=Pfad then // Laden erfolgreich
+      TztHauptDlg.MruListe.AddiereDatei(TztDatName);
+  end;
+  TztHauptDlg.Invalidate;
+end;
+
+//******************************************************************************
+procedure StartlisteDateiLaden(Pfad:String);
+//******************************************************************************
+// nur bei TztConfig Pfad angegeben, dann keine Meldungen
+// wenn erfolgreich: StartlisteDateiName und SpalteTln setzen
+// flexibles Zeilenformat: n[nnn];name
+// Restliche Zeilen ignorieren
+//
+
+(*
+Startliste Format Tria:
+mehrere Listen möglich:
+erstellt mit Tria - 11.4.0 am 07.12.2014 um 15:25:43 Uhr
+
+  Baden-Württembergische Meisterschaften
+
+
+  Triathlon - Beispiel  am  24.05.2012
+  Startliste
+
+  Snr;Name, Vorname;Verein/Ort;Land;Jg;Ak;Startzeit;Kommentar
+  1;Biehler, Eric;SV Schramberg;;1981;M30;15:00:00;
+  ...
+  160;XXX, XXX;Tri Team Heuchelberg;;1970;M40;15:00:00;
+
+
+  2. Liga - Zaberfeld  am  24.05.2012
+  Startliste
+
+  Snr;Name, Vorname;Verein/Ort;Land;Jg;Ak;Startzeit;Kommentar
+  200;Bauz, Hubert;SF Tria Kayh;;1970;M40;15:25:00;
+*)
+var Zeile,
+    SnrStr,NameStr,
+    Dir,DatName      : String;
+    i,n,ZeilenLaenge : Integer;
+    Buf              : TNameObj;
+    SnrNameBufListe  : TStringList;
+    IOFehler,Voll    : Boolean;
+    StartlisteDatei  : Textfile;
+begin
+  DatName  := '';
+  Dir      := '';
+  IOFehler := false;
+  Voll     := false;
+
+  if Pfad = '' then // neue StartlisteDateiName abfragen, Fehler melden
+  begin
+    if (SnrNameListe.Count > 0) and // Liste wurde bereits importiert
+       (TriaMessage(TztHauptDlg,'Beim Import werden die vorher importierten Startnummern gelöscht.',
+                     mtConfirmation,[mbCancel,mbOk]) <> mrOk) then
+      Exit; // Abbruch, ohne weitere Änderngen
+    if TztStartListe.Visible then TztStartListe.Hide; // nicht TztConfig,sonst Anstürz
+
+    Dir := SysUtils.ExtractFileDir(TztDatName);
+    if StartlisteDateiName <> '' then // StartlisteDateiName voreinstellen
+      if SysUtils.DirectoryExists(SysUtils.ExtractFileDir(StartlisteDateiName)) then
+      begin
+        Dir := SysUtils.ExtractFileDir(StartlisteDateiName);
+        if SysUtils.FileExists(StartlisteDateiName) then
+          DatName := SysUtils.ExtractFileName(StartlisteDateiName);
+      end;
+
+    if not OpenFileDialog('txt', //const DefExt: string
+                          'Text-Dateien (*.txt)|*.txt|Alle Dateien (*.*)|*.*',//Filter: string
+                          Dir, //InitialDir: string
+                          0, // Type Txt Dateien
+                          'Startliste-Datei Importieren',//Title: string
+                          DatName) then //var FileName: string
+      Exit; // Abbruch, ohne weitere Änderngen
+
+  end else // Pfad laden, keine Fehlermeldungen (von TztConfig benutzt)
+    DatName := Pfad;
+
+  // Datei DatName als StartlisteDatei einlesen
+  SnrNameBufListe := TStringList.Create; // zuerst in Buffer einlesen,
+  with SnrNameBufListe do
+  begin
+    CaseSensitive := false;
+    Duplicates    := dupIgnore;
+    OwnsObjects   := true;
+    Sorted        := true;
+  end;
+  SnrNameListe.Clear; // TztStartListe nicht sichtbar
+
+  try
+    (*$I-*)
+    AssignFile(StartlisteDatei,DatName);
+    SetLineBreakStyle(StartlisteDatei,tlbsCRLF); // nur beim Schreiben von Bedeutung
+    Reset(StartlisteDatei);
+    if IoResult<>0 then begin IOFehler := true; Exit; end;
+    while not Eof(StartlisteDatei) do
+    begin
+      ReadLn(StartlisteDatei,Zeile);
+      if IoResult<>0 then begin IOFehler := true; Exit; end;
+      Zeile := Trim(Zeile);
+      ZeilenLaenge := Length(Zeile);
+      SnrStr := '';
+      NameStr := '';
+      i := Pos(';',Zeile);
+      if (i > 1) and (i <= 5) then
+      begin
+        SnrStr := LeftStr(Zeile,i-1);
+        if TryDecStrToInt(SnrStr,n) and (n > 0) then // Snr gültig
+        begin
+          SnrStr  := AddLeadZero(SnrStr,4);
+          NameStr := RightStr(Zeile,ZeilenLaenge-i);
+          i := Pos(';',NameStr);
+          if i > 1 then
+            NameStr := LeftStr(NameStr,i-1);
+          NameStr := LeftStr(Trim(NameStr),25); // Max. 25 Zeichen für Name
+          if Length(NameStr) > 0 then // Snr und Name gültig
+          begin
+            if SnrNameBufListe.Count = cnTlnMax then
+            begin
+              Voll := true;
+              Exit;
+            end;
+            Buf := TNameObj.Create(NameStr);
+            SnrNameBufListe.AddObject(SnrStr,Buf);
+          end;
+        end;
+      end;
+    end;
+
+  finally
+    CloseFile(StartlisteDatei);
+    IoResult;
+    (*$I+*)
+    if SnrNameBufListe.Count = 0 then // Fehler beim Laden der Datei
+    begin
+      if Pfad = '' then // nicht TztConfig
+        if IOFehler then
+          TriaMessage(TztHauptDlg,'Fehler beim Lesen der Datei  "'+SysUtils.ExtractFileName(DatName)+'".'+#13+
+                      'Es wurden keine Startnummern importiert.',
+                       mtInformation,[mbOk])
+        else
+        if Voll then
+          TriaMessage(TztHauptDlg,'Maximale Anzahl von 9.999 Startnummern überschritten.'+#13+
+                      'Es wurden keine Startnummern importiert.',
+                       mtInformation,[mbOk])
+        else // kein Überlauf, kein IOFehler
+          TriaMessage(TztHauptDlg,'Die Datei  "'+SysUtils.ExtractFileName(DatName)+'"  ist keine gültige StartListe-Datei.'+#13+
+                      'Es wurden keine Startnummern importiert.',
+                       mtInformation,[mbOk]);
+      StartlisteDateiName := '';
+      SpalteTln := false;
+    end else // DateiKorrekt, Daten übernehmen
+    begin
+      for i:=0 to SnrNameBufListe.Count-1 do
+        with TNameObj(SnrNameBufListe.Objects[i]) do
+        begin
+          Buf := TNameObj.Create(Name);
+          SnrNameListe.AddObject(SnrNameBufListe[i],Buf);
+        end;
+      {if Pfad = '' then // nicht TztConfig
+        TriaMessage('Es wurden  '+IntToStr(SnrNameListe.Count)+'  Startnummern importiert.',
+                     mtInformation,[mbOk]);}
+      StartlisteDateiName := DatName;
+      SpalteTln := true;
+    end;
+    FreeAndNil(SnrNameBufListe);
+    TztHauptDlg.UpdateLayout;
+    TztHauptDlg.UpdateStatusBar;
+  end;
+
+end;
+
+(******************************************************************************)
+function DateiSpeichern: Boolean;
+(******************************************************************************)
+begin
+  if SysUtils.ExtractFileName(TztDatName) = cnTztDatNeu then
+    if DateiSpeichernUnter then Result := true
+                           else Result := false
+  else
+    if Speichern(TztDatName) then Result := true
+                             else Result := false;
+end;
+
+(******************************************************************************)
+function DateiSpeichernUnter: Boolean;
+(******************************************************************************)
+var Pfad,PfadAlt : String;
+begin
+  Result  := false;
+  Pfad    := TztDatName;
+  PfadAlt := Pfad;
+  if SaveFileDialog('trz',
+                    'TriaZeit Dateien (*.trz)|*.trz|Alle Dateien (*.*)|*.*',
+                    SysUtils.ExtractFileDir(TztDatName),
+                    'Speichern unter',
+                    Pfad) then
+  begin
+    TztDatName := Pfad;
+    TztHauptDlg.UpdateCaption;
+    TztHauptDlg.Repaint;
+    //if TztDatName <> '' then // gilt immer
+    try
+      if Speichern(TztDatName) then
+      begin
+        TztHauptDlg.MruListe.AddiereDatei(TztDatName);
+        Result := true;
+      end;
+    finally
+      // auch bei Exception in Speichern
+      if not Result then
+      begin
+        TztDatName := PfadAlt;
+        TztHauptDlg.UpdateCaption;
+      end;
+    end;
+  end
+  else
+  TztHauptDlg.Invalidate;
+end;
+
+(******************************************************************************)
+function DateiKopieren: Boolean;
+(******************************************************************************)
+var Pfad : String;
+begin
+  Result := false;
+  if (KopierDatei <> '') and
+     SysUtils.DirectoryExists(SysUtils.ExtractFileDir(KopierDatei)) then
+    Pfad := KopierDatei
+  else
+    Pfad := TztDatName;
+  if SaveFileDialog('trz',
+                    'TriaZeit Dateien (*.trz)|*.trz|Alle Dateien (*.*)|*.*',
+                    SysUtils.ExtractFileDir(Pfad),
+                    'Kopieren nach',
+                    Pfad) then
+  begin
+    TztHauptDlg.Repaint;
+    if Speichern(Pfad) then
+    begin
+      KopierDatei := Pfad;
+      Result := true;
+    end;
+  end;
+  TztHauptDlg.Invalidate;
+end;
+
+(******************************************************************************)
+function DateiSichern: Boolean;
+(******************************************************************************)
+begin
+  if (not TztDatModified) and (TztBufColl.Count = 0) then Result := true
+  else
+    case TriaMessage(TztHauptDlg,'Änderungen in Datei  "'+SysUtils.ExtractFileName(TztDatName)+
+                     '"  speichern?',
+                      mtConfirmation, [mbYes, mbNo, mbCancel]) of
+      mrYes:
+      begin
+        TztHauptDlg.Repaint;
+        if TztBufColl.Count > 0 then
+          TriaMessage(TztHauptDlg,'Es wurden noch nicht alle Eingaben in der Liste übernommen.'+#13+
+                      'Drucken Sie auf Ok wenn die Übernahme abgeschlossen ist',
+                      mtInformation,[mbOk]);
+        if SysUtils.ExtractFileName(TztDatName) = cnTztDatNeu then
+          if DateiSpeichernUnter then Result := true
+                                 else Result := false
+        else if DateiSpeichern then Result := true
+                               else Result := false;
+      end;
+      mrNo:  Result := true;
+      else Result := false;
+    end;
+end;
+
+(******************************************************************************)
+procedure DateiAutoSpeichern;
+(******************************************************************************)
+begin
+  if Speichern(TztDatName) then // Fehlermeldung wird generiert
+    AutoSpeichernRequest := false
+  else TztHauptDlg.AutoSpeichernInterval := 0; // Autospeichern abschalten
+  AutoSpeichernActive := false;
+end;
+
+(******************************************************************************)
+procedure DateiLesen;
+(******************************************************************************)
+// in DateiNeu benutzt, Inhalt TztColl vorher gelöscht, einschl. Leerzeile, StopPaint=true
+// Leerzeile später angehängt
+var Zeile,
+    SnrRfidStr,
+    ZeitStr,
+    S1,S2,Z       : String;
+    SnrInt,i,
+    ZeilenLaenge,
+    ZeileNr,
+    TrennPos      : Integer;
+    TztLeseColl   : TTztColl;
+    TztBuf        : TTztObj;
+    IOFehler,
+    SnrFehler,
+    ZeitFehler,
+    RfidFehler,
+    RfidBFehler,
+    RfidLFehler,
+    RfidHFehler,
+    Leer          : Boolean;
+    TztDatei      : Textfile;
+    ZeitFormatBuf : TZeitFormat;
+    DecTrennZeichenBuf,
+    TrennZeichenBuf : String;
+
+//------------------------------------------------------------------------------
+function SpaltenZahl(S:String): Integer;
+// nur 2 Spalten gültig
+var i:Integer;
+begin
+  Result := 1; // ungültig
+  if (S=#09) or (S=';') or (S=',') then
+    TrennZeichenBuf := S
+  else
+    if Pos(#09,Zeile) > 0 then TrennZeichenBuf := #09 // TAB
+    else if Pos(';',Zeile) > 0 then TrennZeichenBuf := ';'
+    else if Pos(',',Zeile) > 0 then TrennZeichenBuf := ','
+    else TrennZeichenBuf := '';
+
+  if TrennZeichenBuf <> '' then
+  begin
+    TrennPos := Pos(TrennZeichenBuf,Zeile);
+    for i:=TrennPos+1 to ZeilenLaenge do
+      if Zeile[i] = TrennZeichenBuf then Exit; // mehr als 2 Spalten
+    Result := 2; // nur 2 ist gültig
+  end;
+end;
+//------------------------------------------------------------------------------
+function GetSnrRfidStr: String;
+// 1x TrennZeichenBuf vorher geprüft
+begin
+  Result := Copy(Zeile,1,Pos(TrennZeichenBuf,Zeile)-1);
+end;
+//------------------------------------------------------------------------------
+function GetZeitStr: String;
+// 1x TrennZeichenBuf vorher geprüft
+var i : Integer;
+begin
+  i := Pos(TrennZeichenBuf,Zeile);
+  Result := Copy(Zeile,i+1,ZeilenLaenge-i);
+end;
+//------------------------------------------------------------------------------
+function GetZeitFormatStr(ZF:TZeitFormat): String;
+begin
+  case ZF of
+    zfSek         : Result := 'Sekunden';
+    zfZehntel     : Result := 'Zehntel-Sekunden';
+    zfHundertstel : Result := 'Hundertstel-Sekunden';
+  end;
+end;
+
+//------------------------------------------------------------------------------
+begin
+  IOFehler    := false;
+  SnrFehler   := false;
+  ZeitFehler  := false;
+  RfidBFehler := false;
+  RfidLFehler := false;
+  RfidHFehler := false;
+  TztLeseColl := TTztColl.Create(nil,TTztObj); // zuerst in Buffer einlesen,
+  TztLeseColl.SortMode := TztColl.SortMode;    // damit Grid sich nicht ändert
+  Leer := true;
+  ZeitFormatBuf      := ZeitFormat; // zunächst unverändert
+  DecTrennZeichenBuf := ''; // ungültig
+  ZeileNr := 0;
+
+  try
+
+    (*$I-*)
+    AssignFile(TztDatei,TztDatName);
+    SetLineBreakStyle(TztDatei,tlbsCRLF); // nur beim Schreiben von Bedeutung
+    Reset(TztDatei);
+    if IoResult<>0 then begin IOFehler := true; Exit; end;
+
+    //L := 15;
+    while not Eof(TztDatei) do
+    begin
+      Leer := false;
+      ReadLn(TztDatei,Zeile);
+      if IoResult<>0 then begin IOFehler := true; Exit; end;
+      Inc(ZeileNr);
+      // ZeitFormat bestimmen und prüfen, noch nicht speichern
+      if ZeileNr=1 then
+      begin
+        ZeilenLaenge := Length(Zeile);
+        if SpaltenZahl('') <> 2 then Exit; // TrennZeichenBuf gleich für alle Zeilen
+
+        if ZeilenLaenge - TrennPos = 8 then
+        begin
+          ZeitFormatBuf      := zfSek;
+          DecTrennZeichenBuf := DecTrennZeichen;
+        end else
+        if ZeilenLaenge - TrennPos = 10 then
+        begin
+          ZeitFormatBuf := zfZehntel;
+          if Zeile[ZeilenLaenge-1] = ',' then DecTrennZeichenBuf := ','
+          else if Zeile[ZeilenLaenge-1] = '.' then DecTrennZeichenBuf := '.';
+          // else DecTrennZeichenBuf := ''; // ungültig
+        end else
+        if ZeilenLaenge - TrennPos = 11 then
+        begin
+          ZeitFormatBuf := zfHundertstel;
+          if Zeile[ZeilenLaenge-2] = ',' then DecTrennZeichenBuf := ','
+          else if Zeile[ZeilenLaenge-2] = '.' then DecTrennZeichenBuf := '.';
+          // else DecTrennZeichenBuf := ''; // ungültig
+        end;
+        // else ungültig
+
+        if ZeitFormatBuf <> ZeitFormat then // ZeitFormatBuf gültig
+        begin
+          S1 := GetZeitFormatStr(ZeitFormatBuf);
+          S2 := GetZeitFormatStr(ZeitFormat);
+          if TriaMessage(TztHauptDlg,'Zeitformat der Datei (' + S1 + ') unterscheidet sich vom TriaZeit-Zeitformat ('+S2+').'+ #13 +
+                         'TriaZeit-Zeitformat an Datei anpassen?',
+                         mtConfirmation,[mbYes,mbNo]) <> mrYes then Exit
+        end;
+
+      end else // Zeile > 1
+        // TrennZeichenBuf definiert, gleich für alle Zeilen
+        // ZeilenLaenge, TrennPos flexibel
+        if SpaltenZahl(TrennZeichenBuf) <> 2 then Exit;
+
+      // SnrRfid und Zeit extrahieren und prüfen
+      SnrRfidStr := GetSnrRfidStr;
+      ZeitStr    := GetZeitStr;
+      if RfidModus then
+        if (Length(SnrRfidStr) > cnRfidZeichenMax) or
+           (Length(SnrRfidStr) < cnRfidZeichenMin) then
+        begin
+          RfidFehler := true; // immer abbrechen
+          Exit;
+        end else
+        if not RfidBFehler and not RfidTrimValid(SnrRfidStr) then // nur 1x fragen
+        begin
+          RfidBFehler := true;
+          if TriaMessage(TztHauptDlg,'Ungültiger RFID-Code ("' +SnrRfidStr+ '") in Zeile '+IntToStr(ZeileNr)+'.'+#13+
+                         'Import abbrechen?',
+                         mtConfirmation,[mbYes,mbNo]) = mrYes then
+            Exit; // Abbruch
+        end else
+        if not RfidLFehler and not RfidLengthValid(SnrRfidStr) then // nur 1x fragen
+        begin
+          RfidLFehler := true;
+          if TriaMessage(TztHauptDlg,'RFID-Code ("' +SnrRfidStr+ '") in Zeile '+IntToStr(ZeileNr)+
+                         ' hat '+IntToStr(Length(SnrRfidStr))+' statt ' + IntToStr(RfidZeichen)+ ' Zeichen.'+#13+
+                         'Import abbrechen?',
+                         mtConfirmation,[mbYes,mbNo]) = mrYes then
+            Exit; // Abbruch
+        end else
+        if RfidHex and not RfidHFehler and not RfidHexValid(SnrRfidStr) then // nur 1x fragen
+        begin
+          RfidHFehler := true;
+          if TriaMessage(TztHauptDlg,'RFID-Code ("' +SnrRfidStr+ '") in Zeile '+IntToStr(ZeileNr)+
+                         ' ist keine hexadezimale Zahl.'+#13+
+                         'Import abbrechen?',
+                         mtConfirmation,[mbYes,mbNo]) = mrYes then
+            Exit; // Abbruch
+        end else
+      else // Snr-Modus
+        if (Length(SnrRfidStr) > 4) or
+           (not TryDecStrToInt(SnrRfidStr,SnrInt)or(SnrInt<0)) then // Snr=0 zulassen
+        begin
+          SnrFehler := true; // immer abbrechen
+          Exit;
+        end else
+        if not RfidLFehler and (Length(SnrRfidStr) < 4) then // kürzere Snr optional zulassen
+        begin
+          RfidLFehler := true; // nur 1x fragen
+          if TriaMessage(TztHauptDlg,'Startnummer ("' +SnrRfidStr+ '") in Zeile '+IntToStr(ZeileNr)+
+                         ' hat '+IntToStr(Length(SnrRfidStr))+' statt 4 Zeichen.'+#13+
+                         'Import abbrechen?',
+                         mtConfirmation,[mbYes,mbNo]) = mrYes then
+            Exit; // Abbruch
+        end;
+
+
+      if not RfidModus and (not TryDecStrToInt(SnrRfidStr,SnrInt)or(SnrInt<0)) then // Snr=0 zulassen
+      begin
+        SnrFehler := true;
+        Exit;
+      end;
+
+      if not ZeitFormatOk(ZeitStr,ZeitFormatBuf) then // LeerZeit zulassen
+      begin
+        ZeitFehler := true;
+        Exit;
+      end;
+
+      TztBuf := TTztObj.Create(nil,TztColl,oaNoAdd);
+      TztBuf.Init(SnrRfidStr,ZeitStr);
+      TztLeseColl.AddItem(TztBuf);
+    end;
+    if not Leer then TztDatGeladen := true;
+
+  finally
+    CloseFile(TztDatei);
+    IoResult;
+    (*$I+*)
+
+    if not TztDatGeladen then
+    begin
+      if IOFehler then
+        TriaMessage(TztHauptDlg,'Fehler beim Lesen der Datei  "'+SysUtils.ExtractFileName(TztDatName)+'".',
+                     mtInformation,[mbOk])
+      else
+      if Leer then
+        TriaMessage(TztHauptDlg,'Die Datei  "'+SysUtils.ExtractFileName(TztDatName)+'"  ist leer.',
+                     mtInformation,[mbOk])
+      else
+      if SnrFehler then
+        TriaMessage(TztHauptDlg,'Ungültige Startnummer ("' +SnrRfidStr+ '") in Zeile '+IntToStr(ZeileNr)+'.'+#13+
+                    'Es wurden keine Daten importiert.',
+                    mtInformation,[mbOk])
+      else
+      if RfidFehler then
+        TriaMessage(TztHauptDlg,'Ungültiger RFID-Code ("' +SnrRfidStr+ '") in Zeile '+IntToStr(ZeileNr)+'.'+#13+
+                    'Es wurden keine Daten importiert.',
+                    mtInformation,[mbOk])
+      else
+      if ZeitFehler then
+        TriaMessage(TztHauptDlg,'Ungültige Zeit ("' +ZeitStr+ '") in Zeile '+IntToStr(ZeileNr)+'.'+#13+
+                    'Es wurden keine Daten importiert.',
+                    mtInformation,[mbOk])
+      else
+      if ZeileNr > 0 then
+      begin
+        Z := '';
+        for i:=1 to Length(Zeile) do
+          if Zeile[i] = #9 then // TAB
+            Z := Z + #8594      // Pfeil nach rechts
+          else
+          if Zeile[i] < #33 then // auch Blank als Punkt
+            Z := Z + #183        // MIDDLE DOT
+          else
+            Z := Z + Zeile[i];
+
+          TriaMessage(TztHauptDlg,'Fehler in Zeile '+IntToStr(ZeileNr)+ ': "' + Z + '".'+#13+
+                    'Es wurden keine Daten importiert.',
+                    mtInformation,[mbOk]);
+      end;
+    end
+    else // TztGeladen, Daten übernehmen
+    begin
+      ZeitFormat      := ZeitFormatBuf;
+      DecTrennZeichen := DecTrennZeichenBuf;
+      TztHauptDlg.UpdateLayout;
+      for i:=0 to TztLeseColl.Count-1 do
+      begin
+        TztBuf := TTztObj.Create(nil,TztColl,oaNoAdd);
+        TztBuf.Init(TztLeseColl[i].SnrRfid,TztLeseColl[i].Zeit);
+        TztColl.AddItem(TztBuf);
+      end;
+    end;
+
+    FreeAndNil(TztLeseColl);
+  end;
+end;
+
+(******************************************************************************)
+procedure ErstelleBackup;
+(******************************************************************************)
+// Extension aktueller Datei wird umbenannt in .~trz
+// danach muss geänderte aktuelle Datei neu gespeichert werden
+var BackupName : String;
+begin
+  if BackupErstellen and SysUtils.FileExists(TztDatName) then
+  begin
+    BackupName := SysUtils.ChangeFileExt(TztDatName, '.~trz');
+    // Backup löschen falls schon vorhanden, sonst Fehler bei Rename
+    if (SysUtils.FileExists(BackupName) and not SysUtils.DeleteFile(BackupName)) or
+       not SysUtils.RenameFile(TztDatName, BackupName) then
+    begin
+      TriaMessage(TztHauptDlg,'Sicherungsdatei  "'+SysUtils.ExtractFileName(BackupName)+
+                  '"  kann nicht erstellt werden.' +#13+
+                  'Option Sicherungskopie erstellen wird zurückgesetzt.',
+                  mtInformation,[mbOk]);
+      BackupErstellen := false;
+    end;
+  end;
+end;
+
+(******************************************************************************)
+function Speichern(DatName:String): Boolean;
+(******************************************************************************)
+// alle Einträge wie sortiert speichern
+var i : Integer;
+    TztDatei : Textfile;
+    S : String;
+label Ende;
+begin
+  Result := false;
+  if DatName = TztDatName then ErstelleBackup; // nicht beim kopieren
+
+  (*$I-*)
+  AssignFile(TztDatei,DatName);
+  SetLineBreakStyle(TztDatei,tlbsCRLF); // nur beim Schreiben von Bedeutung
+  Rewrite(TztDatei); // Datei erstellen und öffnen, gleichnamige Datei wird gelöscht
+  if IoResult <> 0 then GoTo Ende;
+
+  // sortiert speichern
+  if (TztColl.Count > 1) or
+     (TztColl.Count = 1) and not TztColl[0].InitWert then
+    for i:=0 to TztColl.SortCount-1 do
+      if not TztColl.SortItems[i].InitWert then // auch SnrRfid mit fehlender Zeit speichern
+      with TztColl.SortItems[i] do
+        begin
+          if RfidModus then S := SnrRfid
+          else S := AddLeadZero(SnrRfid,4);
+          WriteLn(TztDatei,S + cnSnrTrennZeichen + Zeit);
+          if IoResult <> 0 then GoTo Ende;
+        end;
+
+  if DatName = TztDatName then // nicht beim kopieren
+    with TztHauptDlg do
+      ZeitDatGespeichert := ZeitAktuell;
+
+  Result := true;
+
+  Ende:
+  CloseFile(TztDatei);
+  IoResult;
+  (*$I+*)
+
+  if not Result then
+    TriaMessage(TztHauptDlg,'Daten können nicht in  "'+SysUtils.ExtractFileName(DatName)+
+                '"  gespeichert werden.',
+                 mtInformation,[mbOk])
+  else
+    if DatName = TztDatName then TztDatModified := false; // nicht beim kopieren
+end;
+
+
+(******************************************************************************)
+procedure DateiSchliessen;
+(******************************************************************************)
+begin
+  with TztHauptDlg do
+  begin
+    StopPaint := true;
+    TztColl.Clear; // incl. Leerzeile
+    UpdateStatusBar;
+    TztGrid.CollectionUpdate;
+    StopPaint := false;
+    TztGrid.Invalidate;
+    Repaint; // damit leeres Grid gezeigt wird
+    Caption := Application.Title;
+  end;
+end;
+
+(******************************************************************************)
+function OpenFileDialog(const ADefExt, AFilter, AInitialDir: string;
+                        AFilterIndx:Integer; ATitle: string;
+                        var AFileName: string): Boolean;
+(******************************************************************************)
+begin
+  Result := false;
+  if IsWindowsVista then // Vista oder neuer
+  with TztHauptDlg.FileOpenDialog1 do
+  begin
+    Title             := ATitle;
+    FileName          := AFileName;
+    DefaultExtension  := ADefExt;
+    DefaultFolder     := AInitialDir;
+    if not SetzeVistaFilter(FileTypes, AFilter) then
+      with FileTypes do
+      begin
+        Clear;
+        with Add do begin DisplayName := 'Alle Dateien'; FileMask := '*.*'; end;
+      end;
+    FileTypeIndex := AFilterIndx;
+    Options := [fdoPathMustExist,fdoFileMustExist];
+
+    if Execute then
+    begin
+      AFileName := FileName;
+      Result    := true;
+    end;
+  end
+  else
+  with TztHauptDlg.OpenDialog do
+  begin
+    Title       := ATitle;
+    InitialDir  := AInitialDir;
+    FileName    := AFileName;
+    DefaultExt  := ADefExt;
+    Filter      := AFilter;
+    FilterIndex := AFilterIndx;
+    Options     := [ofHideReadOnly,ofPathMustExist,ofFileMustExist,
+                    ofEnableSizing (*, ofShareAware??*)];
+    if Execute then
+    begin
+      AFileName := FileName;
+      Result := true;
+    end;
+  end;
+end;
+
+(******************************************************************************)
+function SaveFileDialog(const ADefExt, AFilter, AInitialDir, ATitle: string;
+                        var AFileName: string): Boolean;
+(******************************************************************************)
+var FilterIndx : Integer;
+begin
+  Result := false;
+  FilterIndx := 1;
+  if IsWindowsVista then
+  with TztHauptDlg.FileSaveDialog1 do
+  begin
+    Title       := ATitle;
+    DefaultExtension  := ADefExt;
+    DefaultFolder     := AInitialDir;
+    FileName    := AFileName;
+    DefaultExtension  := ADefExt;
+    if not SetzeVistaFilter(FileTypes, AFilter) then
+      with FileTypes do
+      begin
+        Clear;
+        with Add do begin DisplayName := 'Alle Dateien'; FileMask := '*.*'; end;
+      end;
+    FileTypeIndex := 1;
+    Options := [fdoOverWritePrompt,fdoPathMustExist (*, ofShareAware??*)];
+    if Execute then
+    begin
+      AFileName := FileName;
+      Result := true;
+    end;
+  end
+
+  else // XP oder früher
+  with TztHauptDlg.SaveDialog do
+  begin
+    Title       := ATitle;
+    InitialDir  := AInitialDir;
+    FileName    := AFileName;
+    DefaultExt  := ADefExt;
+    Filter      := AFilter;
+    FilterIndex := FilterIndx;
+    Options     := [ofHideReadOnly,ofPathMustExist,ofOverwritePrompt,
+                    ofEnableSizing {,ofShareAware??}];
+    if Execute then
+    begin
+      AFileName := FileName;
+      Result := true;
+    end;
+ end;
+end;
+
+
+end.
+

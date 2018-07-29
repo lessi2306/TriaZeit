@@ -1,0 +1,474 @@
+unit TztAllg;
+
+interface
+
+uses SysUtils,Classes,Dialogs,Windows,
+     AllgConst,AllgObj,AllgFunc;
+
+
+const
+  cnBufferMax   = 10;
+
+type
+
+  TTztObj = class(TTriaObj)
+  private
+    FSnrRfid  : String;
+    FZeit     : String;
+    procedure SetSnrRfid(SnrRfidNeu:String);
+    procedure SetZeit(ZeitNeu: String);
+  public
+    FestSortIndex : Integer;  // für nicht-sortieren
+    constructor Create(Veranst:Pointer;Collection:TTriaObjColl;Add:TOrtAdd);override;
+    function    ObjSize: Integer; override;
+    procedure   Init(SnrRfidNeu,ZeitNeu:String);
+    function    InitWert: Boolean;
+    property    SnrRfid: String read FSnrRfid write SetSnrRfid;
+    property    Zeit: String read FZeit write SetZeit;
+    procedure   OrtCollAdd; override;
+    procedure   OrtCollClear(Indx:Integer); override;
+    procedure   OrtCollExch(Idx1,Idx2:Integer); override;
+    //function    Einlesen(Disziplin:Integer; Meldung:Boolean): Boolean;
+  end;
+
+  TSnrSortList = class(TList) // Liste ähnlich TTriaSortList, nach Snr sortiert;
+  public
+    function Add(Item:Pointer): Integer;
+    function Append(Item:Pointer): Integer;
+    function FindIndex(Item:Pointer): Integer;
+    function SnrZahl(ASnr:String): Integer;
+  end;
+
+  TTztColl = class(TTriaObjColl)
+  protected
+    function    GetPItem(Indx:Integer): TTztObj;
+    procedure   SetPItem(Indx:Integer; Item:TTztObj);
+    function    GetSortItem(Indx:Integer): TTztObj;
+  public
+    SnrSortList : TSnrSortList;
+    constructor Create(Veranst:Pointer;ItemClass:TTriaObjClass);
+    destructor  Destroy; override;
+    procedure   Clear; override;
+    function    ClearSortItem(Item:Pointer): Integer; override;
+    procedure   SortClear; override;
+    function    AddSortItem(Item:Pointer): Integer; override;
+    function    AddItem(Item:Pointer): Integer; override;
+    function    InsertItem(Indx:Integer; Item:Pointer): Integer;
+    procedure   ClearIndex(Indx: Integer); override;
+    function    SortString(Item:Pointer): String; override;
+    function    Compare(Item1,Item2:Pointer):Integer; override;
+    property    PItems[Indx: Integer]: TTztObj read GetPItem write SetPItem; default;
+    property    SortItems[Indx:Integer]:TTztObj read GetSortItem;
+  end;
+
+  TNameObj = class(TObject)
+  public
+    Name : String;
+    constructor Create(AName:String);
+  end;
+
+var
+  TztColl             : TTztColl;
+  TztBufColl          : TTztColl;
+  RndCheckColl        : TIntSortCollection;
+  KopierDatei         : String;
+  SnrNameListe        : TStringList;
+  StartlisteDateiName : String;
+  // MinBreiteArray: RfidModus,ZeitFormat,SpalteTln,SpalteZahl
+  MinBreiteArray      : array[false..true,zfSek..zfHundertstel,false..true,false..true] of Integer;
+
+const
+  cnSnrTrennZeichen      = #09; //TAB
+  //cnSnrEditInitWert      = '0';
+  //cnRfidEditInitWert     = '';
+  //cnSnrObjInitWert     = '0000';
+  strSnrUnbekannt        = 'Startnr. unbekannt';
+  strRfidUnbekannt       = 'RFID-Code unbekannt';
+
+implementation
+
+uses TztMain,TztDat;
+
+
+(******************************************************************************)
+(*                   Methoden von TTztObj                                      *)
+(******************************************************************************)
+
+// private Methoden
+
+//------------------------------------------------------------------------------
+procedure TTztObj.SetSnrRfid(SnrRfidNeu:String);
+//------------------------------------------------------------------------------
+// nur neu sortieren wenn Snr/Rfid geändert,
+// sonst verwirrend wenn Snr/Rfid und Zeit gleich bleiben und Position sich ändert
+begin
+  if not RfidModus then
+    SnrRfidNeu := AddLeadZero(Trim(SnrRfidNeu),4); // '0000' wenn S=''
+  if SnrRfidNeu <> FSnrRfid then
+  begin
+    if FCollection <> nil then FCollection.ClearSortItem(Self);
+    if GetIndex >= 0 then FCollection.AddSortItem(Self);        -1!!!!!!!!!!!!!!!!!!
+  end;
+end;
+
+//------------------------------------------------------------------------------
+procedure TTztObj.SetZeit(ZeitNeu: String);
+//------------------------------------------------------------------------------
+// ZeitNeu immer 8/10 Zeichen, ohne Blanks
+begin
+  if ZeitNeu <> FZeit then
+  begin
+    if FCollection <> nil then FCollection.ClearSortItem(Self);
+    FZeit := ZeitNeu;
+    if GetIndex >= 0 then FCollection.AddSortItem(Self);
+  end;
+end;
+
+// public Methoden
+
+//******************************************************************************
+constructor TTztObj.Create(Veranst:Pointer; Collection:TTriaObjColl;Add:TOrtAdd);
+//******************************************************************************
+begin
+  inherited Create(Veranst,Collection,oaNoAdd);
+  SetSnrRfid('');        // in Startnr-Modus geändert in '0000'
+  FZeit := ZeitInitWert; // bei Leerstring wäre Dateiformat ungültig
+  FestSortIndex := -1;
+end;
+
+//******************************************************************************
+function TTztObj.ObjSize: Integer;
+//******************************************************************************
+// Dummy um Compiler-Warnung zu vermeiden
+begin
+  Result := 0;
+end;
+
+//******************************************************************************
+procedure TTztObj.Init(SnrRfidNeu,ZeitNeu:String);
+//******************************************************************************
+begin
+  SetSnrRfid(SnrRfidNeu);
+  SetZeit(ZeitNeu);
+end;
+
+//******************************************************************************
+function TTztObj.InitWert: Boolean;
+//******************************************************************************
+// bei Snr gilt auch '0' als InitWert
+begin
+  Result := ((SnrRfid = '') or (not RfidModus and (StrToIntDef(SnrRfid,0) = 0))) and
+            (UhrZeitWert(Zeit) < 0);
+end;
+
+//******************************************************************************
+procedure TTztObj.OrtCollAdd;
+//******************************************************************************
+begin
+  // nur um Compilerwarnung zu vermeiden
+end;
+
+//******************************************************************************
+procedure TTztObj.OrtCollClear(Indx:Integer);
+//******************************************************************************
+begin
+  // nur um Compilerwarnung zu vermeiden
+end;
+
+//******************************************************************************
+procedure TTztObj.OrtCollExch(Idx1,Idx2:Integer);
+//******************************************************************************
+begin
+  // Dummy um Compiler-Warnung zu vermeiden
+end;
+
+(******************************************************************************)
+(*                  Methoden von TSnrSortList                                 *)
+(******************************************************************************)
+
+//******************************************************************************
+function TSnrSortList.Add(Item:Pointer):Integer;
+//******************************************************************************
+begin
+  Result := FindIndex(Item);
+  Insert(Result,Item);
+end;
+
+//******************************************************************************
+function TSnrSortList.Append(Item:Pointer): Integer;
+//******************************************************************************
+begin
+  Result := inherited Add(Item);
+end;
+
+//******************************************************************************
+function TSnrSortList.FindIndex(Item:Pointer):Integer;
+//******************************************************************************
+// gleich wie TTriaSortList, nur Compare integriert
+//..............................................................................
+function SortString(Item:Pointer): String;
+// gleich wie TztColl.SortString mit SortMode = smTztSnrAuf
+begin
+  if Item <> nil then
+  with TTztObj(Item) do
+    {if (StrToIntDef(Snr,0) = 0) and (UhrZeitWert(Zeit) < 0) then
+      Result := 'C '
+    else}
+      Result := Format('B %s %s',[FSnrRfid,FZeit])
+  else
+    Result := ' ';
+end;
+//..............................................................................
+var
+  L, H, I, C: Integer;
+begin
+  L := 0;
+  H := Count-1;
+  while L <= H do
+  begin
+    I := (L + H) shr 1;
+    C := CompareStr(SortString(Items[I]),SortString(Item));
+    if C < 0 then L := I + 1
+             else H := I - 1;
+  end;
+  Result := L;
+end;
+
+//******************************************************************************
+function TSnrSortList.SnrZahl(ASnr:String): Integer;
+//******************************************************************************
+// Liste nach Snr sortiert
+var
+  L, H, I, C: Integer;
+  Bool : Boolean;
+begin
+  Result := 0;
+  Bool := false;
+  L := 0;
+  H := Count-1;
+  while L <= H do
+  begin
+    I := (L + H) shr 1;
+    C := CompareStr(TTztObj(Items[I]).SnrRfid,ASnr);
+    if C < 0 then L := I + 1 else
+    begin
+      H := I - 1;
+      if C = 0 then
+        Bool := true;
+    end;
+  end;
+  if Bool then // ASnr gefunden mit Index = L, Bool muss immer true sein
+  begin
+    Result := 1;
+    I := L-1;
+    C := 0;
+    while (I >= 0) and (C = 0) do
+    begin
+      C := CompareStr(TTztObj(Items[I]).SnrRfid,ASnr);
+      if C = 0 then
+        Inc(Result);
+      Dec(I);
+    end;
+    I := L+1;
+    C := 0;
+    while (I < Count) and (C = 0) do
+    begin
+      C := CompareStr(TTztObj(Items[I]).SnrRfid,ASnr);
+      if C = 0 then
+        Inc(Result);
+      Inc(I);
+    end;
+  end;
+end;
+
+(******************************************************************************)
+(*                  Methoden von TTztColl                                     *)
+(******************************************************************************)
+
+// protected Methoden
+
+//==============================================================================
+function TTztColl.GetPItem(Indx:Integer): TTztObj;
+//==============================================================================
+begin
+  Result := TTztObj(inherited GetPItem(Indx));
+end;
+
+//==============================================================================
+procedure TTztColl.SetPItem(Indx:Integer; Item:TTztObj);
+//==============================================================================
+begin
+  inherited SetPItem(Indx,Item);
+end;
+
+//==============================================================================
+function TTztColl.GetSortItem(Indx:Integer): TTztObj;
+//==============================================================================
+begin
+  Result := TTztObj(inherited GetSortItem(Indx));
+end;
+
+// public Methoden
+
+//******************************************************************************
+constructor TTztColl.Create(Veranst:Pointer;ItemClass:TTriaObjClass);
+//******************************************************************************
+begin
+  inherited Create(Veranst,ItemClass);
+  FSortMode := smTztZeitAuf;
+  FSortItems.Duplicates := true;(* damit gleiche Einträge aufgelistet werden *)
+end;
+
+//******************************************************************************
+destructor TTztColl.Destroy;
+//******************************************************************************
+begin
+  if SnrSortList <> nil then SnrSortList.Free;
+  inherited Destroy;
+end;
+
+//******************************************************************************
+procedure TTztColl.Clear;
+//******************************************************************************
+begin
+  if SnrSortList<>nil then SnrSortList.Count := 0;
+  inherited Clear;
+end;
+
+//******************************************************************************
+function TTztColl.ClearSortItem(Item:Pointer): Integer;
+//******************************************************************************
+begin
+  Result := inherited ClearSortItem(Item);
+  if SnrSortList <> nil then SnrSortList.Remove(Item);
+end;
+
+//******************************************************************************
+procedure TTztColl.SortClear;
+//******************************************************************************
+begin
+  inherited SortClear;
+  if SnrSortList <> nil then SnrSortList.Count := 0;
+end;
+
+//******************************************************************************
+function TTztColl.AddSortItem(Item:Pointer): Integer;
+//******************************************************************************
+begin
+  Result := inherited AddSortItem(Item);
+  if SnrSortList <> nil then SnrSortList.Add(Item)
+end;
+
+//******************************************************************************
+function TTztColl.AddItem(Item:Pointer): Integer;
+//******************************************************************************
+// leeres Item am Ende anhängen, wenn noch keine Leerzeile, sonst keine Aktion
+// wenn nicht in FestSortMode (ZeitnahmeModus) am Ende anhängen, FestSortIndex ohne Bedeutung
+// in FestSortMode (EditierModus) kann ColEditMode gesetzt sein (F5-Taste)
+// an vorletzte Zeile einfügen wenn letzte Zeile leer, sonst letzte Zeile
+begin
+  if Item = nil then Result := -1
+  else
+  with TztHauptDlg.TztGrid do
+  begin
+    if Self = Collection then  // nur TztGrid
+    begin
+      if (SortCount > 0) and SortItems[SortCount-1].InitWert and   // letzte Zeile der Coll leer und
+         (not ColEditMode or (Row<>SortCount)) then  // letzte Zeile nicht in ColEditMode
+        if TTztObj(Item).InitWert then
+        begin
+          Result := IndexOf(SortItems[SortCount-1]);
+          Exit; // keine Aktion
+        end else
+        begin
+          TTztObj(Item).FestSortIndex := SortCount-1; // Item vor Leerzeile einfügen
+          SortItems[SortCount-1].FestSortIndex := SortCount;
+        end
+      else
+        TTztObj(Item).FestSortIndex := Count; // Item am Ende
+
+    { if TztDatGeladen and  // nicht während dem Laden
+        SpalteZahl and (SnrSortList <> nil) and
+        (SnrSortList.SnrZahl(TTztObj(Item).Snr) >= RndCheckZahl) then
+       MessageBeep(MB_OK); }
+
+    end else // TztLeseColl, TztBufColl
+      if SortMode <> smNichtSortiert then // nicht bei TztBufColl
+        TTztObj(Item).FestSortIndex := Count; // Item am Ende
+
+    Result := inherited AddItem(Item);
+  end;
+end;
+
+//******************************************************************************
+function TTztColl.InsertItem(Indx:Integer; Item:Pointer): Integer;
+//******************************************************************************
+var i : Integer;
+begin
+  if (Indx >= 0) and (Indx < Count) then // Count=SortCount
+  begin
+    TTztObj(Item).FestSortIndex := Indx;
+    for i:=Indx to SortCount-1 do
+      SortItems[i].FestSortIndex := i+1;
+    Result := inherited AddItem(Item);
+  end else
+    Result := -1;
+end;
+
+//******************************************************************************
+procedure TTztColl.ClearIndex(Indx: Integer);
+//******************************************************************************
+var i : Integer;
+begin
+  inherited ClearIndex(Indx);
+  // FestSortIndex komplett neu setzen (Indx von Coll ungleich Indx von SortColl)
+  for i:=0 to SortCount-1 do
+    SortItems[i].FestSortIndex := i;
+end;
+
+//******************************************************************************
+function TTztColl.SortString(Item:Pointer): String;
+//******************************************************************************
+begin
+  if (Item <> nil) and (FSortMode <> smNichtSortiert) then // TztBufColl nicht sortieren
+  with TTztObj(Item) do
+    if (FSortMode <> smFestSortiert) and InitWert then // InitWert immer unten
+      case FSortMode of
+        smTztSnrAuf,smTztZeitAuf : Result := 'C ';
+        smTztSnrAb, smTztZeitAb  : Result := 'A ';
+      end
+    else
+      case FSortMode of
+        smTztSnrAuf,smTztSnrAb    : Result := Format('B %s %s',[FSnrRfid,FZeit]);
+        smTztZeitAuf,smTztZeitAb  : Result := Format('B %s %s',[FZeit,FSnrRfid]);
+        smFestSortiert            : Result := Format('B %5d',[FestSortIndex]);
+        else                        Result := '';
+      end
+  else
+    Result := ' ';
+end;
+
+//******************************************************************************
+function TTztColl.Compare(Item1,Item2:Pointer):Integer;
+//******************************************************************************
+begin
+  case FSortMode of
+    smTztSnrAuf,smTztZeitAuf,smFestSortiert:
+      Result := CompareStr(SortString(Item1),SortString(Item2));
+    else
+      Result := CompareStr(SortString(Item2),SortString(Item1));
+  end;
+end;
+
+//******************************************************************************
+constructor TNameObj.Create(AName:String);
+//******************************************************************************
+begin
+  inherited Create;
+  Name := Trim(AName);
+end;
+
+
+
+end.
+

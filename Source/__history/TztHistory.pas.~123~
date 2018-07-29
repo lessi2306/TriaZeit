@@ -1,0 +1,728 @@
+unit TztHistory;
+
+interface
+
+const
+  cnVersionsNummer = '5.3d';  // Konstanten-Bezeichnung gleich für Tria
+  cnVersionsJahr   = '2017'; // nur für InfoDlg
+
+implementation
+
+(******************************************************************************)
+(*        History                                                             *)
+(******************************************************************************)
+{
+
+13.05.2003 - Version 1.0 Released
+
+02.07.2003:
+TztAllg: in SortString function Format eingeführt 
+
+15.07.2003:
+TztInfoDlg:  Haftungsklausel geändert
+
+15.07.2003 - Version 1.1 Released
+
+
+################################################################################
+Version 1.2:
+================================================================================
+06.10.2003: TztAllg: TztColl.SortString korrigiert (FZeit=String, kein Integer)
+
+13.10.2003: - Version 1.2 auf Homepage (mit Tria 1.9)
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 1.3:
+================================================================================
+02.11.03:
+TztAllgDlg: Options in Save- und OpenDialoge korrigiert
+alle:       mtError durch mtWarning ersetzt
+TztMain:    Editiermode nicht mit ESC Abbrechen, nur Änderungen rückgängig
+            Trennung EditierMode und ZeitnameMode entfernt, alle Buttons sind
+            immer enabled.
+            Menu Bearbeiten, Ansicht (Sortieren/Vergrößern) und
+            Optionen (Backup,SofortSpeichern) hinzugefügt
+            ToolButtons Editieren und Zeitnahme entfernt,
+            Größer/Kleiner ergänzt
+
+TztAllg:    TztObj.Create - FSnr:='0000' statt CnSnrInitWert
+            TztObj SetSnr/Zeit: nur bei Änderung neu Sortieren
+            TztColl.TztAktuellSpeichern - Backup Option ergänzt
+TztAllgDlg: durch Unit TztDat ersetzt StartDialog entfernt
+
+TztDat:     ofPathMustExist ergänzt in SaveDialog
+            DateiNeu:  Datei nicht speichern
+
+22.12.2003: - Version 1.3 auf Homepage (mit Tria 2.2)
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 2.0:
+================================================================================
+15.02.04:   Windows XP Design
+            Online, Kontextsensitive Hilfe
+
+18.02.2004: - Version 2.0 auf Homepage (mit Tria 2004 - 1.0)
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 2.1:
+================================================================================
+28.03.04:  in TztDat-DateiNeu  function ExpandFileName benutz
+           (hierfür noch kein neues Release notwendig)
+
+01.06.04:  in TztMain: Ansicht-Sortiermodes-Checked-Status korrigiert
+           in TztMain: SofortSpeichernAction.Checked initialisiert
+           in TztInfoDlg Web und Mail als Link
+           in TztAllg: Add als parameter in TztObj.Create ergänzt (ohne funktion)
+           in TztMain: in UhrzeitTimerTick TztBufColl.ClearIndex(0) vor
+           TztAktuellSpeichern, damit TztDatModified false gesetzt wird
+
+02.06.2004: - Version 2.1 auf Homepage (mit Tria 2004 - 1.2)
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 2.2:
+================================================================================
+27.02.05:  in TztMain  Unterstrich in AendBtn von n nach e geändert (war doppel)
+
+27.02.05: - Version 2.2 erzeugt
+11.03.05: - Version 2.2 mit XP Manifest compiliert,
+            damit ist externe Manifest-Datei nicht mehr nötig
+13.04.05: - TztInfoDlg: Email-Adresse entfernt, CopyRight angepaßt
+25.04.05: - TztAllg: cnBufferMax van 16 nach 10
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 2.3:
+================================================================================
+20.05.05:  Text in TztInfoDlg geändert
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 3.0:
+================================================================================
+14.02.06: mit BDS 2006 compiliert
+
+TztMain:
+- ToolbuttonRand enfernt
+- ActionMainMenuBar.PersistentHotKeys := true: in Create und in IdleHandler,
+  weil dies nach Verwendung automatisch zurückgesetzt wird (Delphi Fehler?)
+  Muss gesetzt bleiben, sonst wird '&' in Dateiname nicht richtig angezeigt.
+
+TztInfoDlg:
+- CopyRight bis 2006
+- TMeno durch TLabel ersetzt, weil Text markiert und gelöscht werden konnte.
+
+AllgFunc, etc. :
+- function ErsetzeEinfachUnd eingeführt um '&' in MessageDlg/MruListe richtig
+  anzuzeigen (Einfach '&' wird als Unterstrich angezeigt).
+- Function TriaMessage als Ersatz für MessageDlg mit ErsetzeEinfachUnd
+
+TztDat:
+- ValidZeithhmmss durch UhrzeitWertSek ersetzt (Vereinheitlichung)
+
+TztConfig:
+- Configuration in Ini-Datei ablegen, ähnlich TriaConfig
+  Sortiermode in Ini
+  Default Sortiermode von ZeitAb nach ZeitAuf
+
+TztDrucken:
+- neu: Druckfunktion der Einträge
+
+TztOptDlg, TztMain:
+- neue Optionen:
+    Start mit letztbenutzte Datei
+    Zeit in Zehntelsek.
+    Stoppuhr
+
+--------------------------------------------------------------------------------
+14.4.2006: Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 3.1:
+================================================================================
+TztMain:
+- SetFocus SnrEdit in Start- und Stop-ActionExecute
+- DefaultExt ohne '*.'
+- In Editmode nicht neu sortiren (smFestsortiert)
+- Editmode: bei Enter ==> nächste Zeile fokussieren
+            TAB bleibt im Grid, nicht zum zeitnahme-modus
+
+TztUpdDlg
+- Neu: Internet Update
+
+TztConfig
+- Ini-datei in C:\Dokumente und einstellungen\user\Anwendungsdaten\Tria, weil
+  hier keine Administrator-Rechte zum Erstellen/Schreiben nötig sind
+- Exceptions beim Speichern abfangen, damit das Programm beendet wird
+
+--------------------------------------------------------------------------------
+07.05.2006: Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 3.2:
+================================================================================
+TztMain:
+- MenüItems MruDatei 1/2 - visible false gesetzt im design-modus, 3/4 waren Ok
+TztMain/TztUpdDlg:
+- Close von InternetUpdate nach UpdateActionExecute
+TztAllg:
+- TztAktuellSpeichern: bei Fehler wird SofortSpeichern zurückgesetzt und nicht
+  Programm beendet
+TztOptDlg:
+- in OkButtonClick wird beim Setzen von SofortSpeichern vorher Datei erstellt,
+  weil Datei vorhanden sein muss.
+TztDat:
+- in DatNeu wird bei SofortSpeichern Datei gespeichert, weil Datei vorhanden
+  sein muss
+
+--------------------------------------------------------------------------------
+29.06.2006: Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 3.3:
+================================================================================
+- für Windows-Vista mit neue HTML-Help-version compiliert (wie Tria 2006-1.5)
+
+- TztMain:
+  Timermode in Create initialisiert: SetzeTimerModus(zmUhrZeit)
+
+--------------------------------------------------------------------------------
+28.03.2007: Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 4.0:
+================================================================================
+
+AllgFunc:
+- TriaMessage: Position zentiert
+- UhrzeitStr basiert auf 1/100 Sek statt 1/10
+
+AllgConst,....
+- ZeitFormat statt DecZeiten
+
+-
+TztConfig,TztMain:
+- Position := poDesktopCenter in TztMain und poDesigned in TztConfig
+
+VistaFix eingeführt
+
+TztUpdDlg,TztOptDlg:
+- DisableButtons eingeführt um Doppelklicks zu filtern
+
+TztMain:
+- TTztHauptDlg.FormPaint Alte StopPaint wiederherstellen statt immer auf false
+  Damit wird flikkern beim Laden verhindert
+- nach dem Start beim Drucken von "Ändern" steht Snr manchmal zu weit links.
+  In TztGridPaint auch bei emNone GridSnrEdit,GridZeitEdit neu berechnen
+- Zusätzliche Spalte mit Zeilennr.
+
+TztDat:
+- kein Eintrag in leerer Datei speichern
+- Daten wie sortiert speichern
+
+AllgComp:
+- TTriaGrid abgeleitet von TCustomDrawGrid statt TDrawGrid
+  Nicht benutzte properties entfernt
+- TTriaCustomMaskEdit neu als Basis für alle MaskEdits
+- ValidateEdit als fuction statt procedure, zu verwenden in allen Dlg in EigabeOk,
+  (weil Validate bei Enter nicht automatisch ausgeführt wird)
+- FOrgText, AendereText, GetText, SetText neu, damit in ValidateEdit
+  auch Änderungen erkannt werden, die in Change durchgeführt werden
+- MessageBeep in ValidateError entfernt
+- LeerValid entfernt (wird nur bei Liga MschGrAnm/Start benutzt)
+- ClearText enfernt
+- TZeitEdit.FLeerZulassen entfernt, immer zulassen (true in Tria, false in TriaZeit)
+  
+TztOptDlg,TztConfig,TztUpdDlg,AllgConst:
+- Automatische Update-Prüfung als neue Option (max 1x täglich)
+- Darstellung in Hundertstel
+- Automatisch Speichern 0,1 - 99,9 Min
+
+AllgFunc:
+- TryStrToInt durch TryDecStrToInt ersetzt
+
+TztAbglDlg:
+- neu: Snr abgleichen
+
+--------------------------------------------------------------------------------
+01.03.2009: Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 4.1:
+================================================================================
+
+TztUpdDlg:
+- InternetUpdate: StatusBarUpdate vor ShowModal
+
+TztMain:
+- UhrzeitTimerTick: Konflikt bei gleichzeitiger Zugriff wie in Tria lösen
+- CommandHeader, CommandTrailer eingeführt
+- MruListe max 8 statt 4
+- SetzeTimerModus: Hints für ZeitnahmeBtn korrigiert (F3,4,5)
+- UhrzeitTimerTick: TrzDatModified gesetzt wenn Daten in TztGrid übernommen werden.
+- ZeitnahmeActionExecute: TrzDatModified nicht setzen wenn Daten in TztBuffColl übernommen
+- FormCreate und FormDestroy entfernt, Funktion in Create/Destroy übernommen
+- Initialisiert und Neustart entfernt, Initialisierung am Ende von Create statt
+  in Idle Event Handler. Nur Focus in OnShow Event setzen.
+  Timer und IdleHandler erst am Ende von Create enabled.
+- Damit auch Fehler bei fehlender Hilfe-Datei korrigiert
+- neue var: HelpDateiVerfuegbar, damit alle Hilfe-Funktionen disabled werden können
+- neu: SetzeFocus statt RestoreFocus, auch ColEditMode bleibt erhalten
+- bei Zeitnahme bleibt alter Focus erhalten statt grundsätzlich SnrEdit.
+  Kann benutz werden wenn Snr grundsätzlich nach Zeitnahme eingegeben wird,
+  deshalb keine spezielle Option dafür notwendig. Dies ist auch verwirrend,
+  wegen Funktion Eingabe-Taste (Zeitnahme oder Ändern?)
+
+TztDat:
+- DateiNeu - GetSpecialFolder(CSIDL_DESKTOPDIRECTORY), statt Programmdir,
+             nur wenn vorher keine Datei geladen war
+  DateiNeu - SetCurrentDirectory ergänzt
+
+TztOptDlg:
+- AutospeichernInterval in Sek statt 1/10 Min, von 1 - 99 Sek.
+  Min 1 Sek statt 6 Sek wegen Live Zeiterfassung
+- neue Option: Beep bei Zeitnahme
+  Neuer TAB Zeitnahme, mit StoppUhrMode und Beep
+
+TztConfig, AllgConst, TztMain:
+- Zeitnahme-Modus und StartUhrzeit in Ini, statt StoppUhr, damit bei Neustart in Run-Modus
+  die Uhr weiter lauft.
+
+--------------------------------------------------------------------------------
+10.11.2009: Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 4.2:
+================================================================================
+
+TztMain:
+- TztGridGetColText: Fehlerkorr.: LeerZeit wird als '' statt '-' gespeichert
+- TztGridSelectCell: auf fehlender Zeit prüfen
+- SetzeButtons: auch TztGrid enabled/disable, damit über Click in EditMode unmöglich
+
+TztDat:
+- DateiLesen: bei statt auf Zeit=-1 auf ZeitFormat prüfen, Leerzeit zulassen
+
+AllgComp
+- SetzeColEditMode statt SetColEditMode mit zukünftige Col,Row
+  Diese wird OnSelectCell Eventhandler geprüft um bei Zeilen- oder Spaltewechsel
+  in EditMode auf leeres Zeitfeld prüfen zu können
+
+--------------------------------------------------------------------------------
+19.03.2010: Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 4.3:
+================================================================================
+
+TztDat:
+- Speichern: nur speichern wenn Zeit <> Zeitinitwert
+
+--------------------------------------------------------------------------------
+28.03.2010: 4.3 Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 4.4:
+================================================================================
+
+AllgFunc:
+- function AddLeadZero,RemLeadZero wieder eingeführt, weil benutzt für TriaZeit
+
+TztDat,TztMain:
+- FileOpenDialog1,FileSaveDialog1 für Vista ergänzt (Neu in Delphi XE (2011))
+- OpenFileDialog, SaveFileDialog angepasst
+
+Anpassung an Delphi XE (2011):
+Korrekturen für Delphi 2006 entfernt:
+- AllgConst, etc.: DialogNeu entfernt, Korrektur für Delphi XE nicht mehr benötigt
+- VistaFix: VistaAltFix, FileDialog-function entfernt
+- TriaMain: D6OnHelpFix, HideAppFormTaskBarButton,CreateParams,WMSyscommand,WMActivate entfernt
+
+TztAbglDlg:
+- InitAbglColl: Abgleich verbessert
+  vertauschte Snr besser erkennen: 2-fach und 3-fach Überholungen
+  Differenz in Zahl der Snr- und Tzt-Einträge berücksichtigen
+
+TztDat:
+- TztByteDatei (file of Byte): BlockWrite in SchreibeZeile funktioniert bei
+  Delphi XE nicht mehr richtig (immer 2 Bytes geschrieben)
+  Ersetzt durch lokale TztDatei (Textfile) (auch beim Lesen) und verwendung von WriteLn,
+  function SchreibeZeile entfernt
+
+--------------------------------------------------------------------------------
+09.07.2012: 4.4 Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 4.5:
+================================================================================
+AllgComp:
+- TTriaGrid:
+  - neu EditierMode, AktionsSpalte,
+  - OnMouseWheel event und DoMouseWheel public; benutzt wenn TztHauptDlg Edits fokussiert
+  - neu: NachUnten; benutz für Enter-Taste in EditierMode, ggf. unten neue Zeile anhängen
+  - NachRechts,Links: immer nächste Zeile unten, ggf. neue Zeile anhängen
+  - neu: ColEditBreite
+  - ColEditMode schreibbar
+  - neu: TStartZeitEdit: Startzeit in StoppUhrmodus editierbar
+  - SetColEditsPos geändert: Edit in der Mitte zentriert
+  - DrawCell entfernt, Rahmen in Paint
+  - SelectCell entfernt, Funktionen in OnSelectCell
+  - neu: GetColEditsPos, gemeinsam für SetColEditPos und TTztHauptDlg.CustomAlignPosition
+  - InvalidateZelle, InvalidateAlles entfernt, immer InvalidateGrid benutzen
+  - FocusZelle: nur FocusCell aufrufen, nicht zusätzlich mit SelectCell prüfen
+  - KeyPress: bei verlassen der Zelle immer ColEditMode aus, Enter nach nächste Zeile
+    statt SwitchColMode: Reset-, SetColEditMode
+
+- TCustomMaskEdit:
+  - SetText: Modified:= false ergänzt,  wird in inherited SetText nicht false
+    wenn geänderte Text gleich neuer Text
+
+- TZeitEdit:
+  - IstLeer ergänzt für Maskzeichen '\' vor ':', damit unabhängig von Ländereinstellungen
+
+AllgConst:
+- TZeitGleich = (zgGleichOk,zgGleichNok);
+- TTimerModus: neu zmStart
+
+AllgFunc:
+- ZeitFormatOk: DecTrennzeichen ergänzt
+
+TztOptDlg:
+- das Verhindern der Erfassung von identischen Zeiten nicht länger fest vorgegeben
+  sondern als Option unter Extras einstellbar.
+  Als Vorgabe gleiche Zeiten zulassen. Beim Laden der Ini-Datei die Verhinderung
+  als Default einstellen wegen Kompatibilität
+
+TztAbglDlg:
+- Tabelle: 7 statt 9 Spalten, AktionsSpalte mit Button-Funktion für Abgleich
+- SnrDateiLesen korrigiert:
+  - Exception bei Snr mit weniger als 4 Ziffern (Min statt Max)
+  - Leere Datei als Leer gelmeldet statt ungültig
+  - Dateiname von SnrDatei statt ZeitDatei in Fehlermeldung
+- SetzeButtons korrigiert für leeres Item am Ende von TztColl
+- AbglGridDblClick: Setze ColEditMode
+- neu: AbglGridMouseDown,AbglGridMouseUp: Zeile Abgleichen mit AktionsSpalte
+- function Farbe durch getrennt für Hintergrund und AktionsSymbole
+- CMDialogKey: VK_TAB in Edits abfangen für TriaGrid.KeyDown
+- neu: Abgleichen, einzelne Zeile abgleichen nach Tastendruck
+- TztCollLesen: LeerZeile am Ende ignorieren
+- TAbglObj.SetzeAktion: Item neu sorieren, kann beim entfernen rausfallen
+- AbglGridSelectCell: nur in ColEditMode prüfen, wenn Ok ausschalten
+- AbglGridDrawCell: AktionsSpalte mit Buttons zeichnen
+- OnShow: StatusGB use SetWindowLong damit HelpContext funktioniert
+
+TztAllg:
+- Text- und Hintergrundfarbe für Nr.-Spalte grau, Nr-Überschrift ergänzt.
+- neu: GleichZeitInitWert, TztInitWert
+- TTztColl.AddItem: leeres Item am Ende anhängen, wenn noch keine Leerzeile, sonst keine Aktion.
+  Wenn nicht in FestSortMode (ZeitnahmeModus) am Ende anhängen, FestSortIndex ohne Bedeutung.
+  In FestSortMode (EditierModus) kann ColEditMode gesetzt sein (F5-Taste).
+  An vorletzte Zeile einfügen wenn letzte Zeile leer, sonst letzte Zeile.
+- neu: TTztColl.InsertItem,ClearIndex: FestSortIndex neu definieren
+- TTztColl.SortString: wenn nicht FestSortIndex leerZeile am Ende
+
+TztConfig:
+- neue function SetzeZeitFormat nach Einlesen von ZeitFormat,TrennZeichen benutzen
+
+TztDat:
+- DateiLesen:
+  - Leere Datei erkennen und melden
+  - ZeitFormat,TrennZeichen zunächst puffern, erst wenn Laden Ok function SetzeZeitFormat aufrufen
+
+TztMain:
+- ZeitInitWert: Ergebnis mit DecTrennZeichen statt fest '.'
+- ZeitEdit in ZeitDummyEdit umbenannt, neu ZeitEdit-TStartZeitEdit. In StoppMdus
+  ist StartZeit editierbar 0:00:00-23:59:59
+- neu: TrennPanel zwischen Edits und Grid
+- neu: CMDialogKey: VK_TAB in Edits abfangen für TriaGrid.KeyDown
+- ResetEditierMode und SetzeEditierMode ersetzen ResetEditMode. In EditierMode
+  eine Zelle im Grid in Focus, sonnst ganze Zeile Hellblau. In EditierMode wird
+  Ziffer-Eingabe sofort eingetragen, dabei zuerst ColEditMode setzen, wobei ColEdit
+  in Front. Nach jede Eingabe ColEditMode abschalten (Grid in front) und im Zelle
+  Text von TztColl anzeigen.
+  Immer eine Leerzeile unten
+  In EditierMode Sortieren ausgeschaltet (FestSortIndex)
+- SetzeTimerModus: zmStart ergänzt, gesetzt mit Button,
+  speichert StartUhrzeit und wechselt automatisch in zmRum
+  ZeitEdit in zmStop editierbar, sonst ReadOnly
+- UpdateStatusBar: letzte Leerzeile nicht mitzählen
+- SetzeZeitFormat: zusätzlich zum ZeitFormat und TrennZeichen:
+  InitEditMask für ZeitEdits, TztColl Zeitwert anpassen, Layout/FontSize anpassen
+- StartActionExecute: F3-Taste landet hier, EditierMode und ColEditMode beibehalten
+- SetzeButtons: TztGrid nicht disabeln, weil Focus verloren geht
+- F5 Taste in EditierMode und ColEditMode: Focus bleibt, kein Rückkehr zum Zeitnahme-Mod
+- CreateMutex(nil, False, 'TriaZeitMutexName'); eingeführt um beim nächsten Update
+  Setup abzubrechen wenn tria ausgeführt wird
+
+--------------------------------------------------------------------------------
+07.04.2014: 4.5 Released
+--------------------------------------------------------------------------------
+
+################################################################################
+Version 5.0:
+================================================================================
+
+von Delphi XE auf XE2 umgestellt
+
+Setup:
+- neue Version Inno Setup: 5.5.5
+
+Hilfe:
+- TriaZeit.ali korrigiert.
+  Hilfe-Button in Dialogen springt jetzt an die richtige Stelle in der Online-Hilfe
+
+AllgConst:
+- SpalteZahl,RndCheckZahl,SpalteTln neu eingeführt
+- Kopierdatei neu eingeführt, in INI speichern und voreinstellen
+- StartlisteDatei neu, in INI speichern und voreinstellen
+- RpDefine aus uses entfernt, weil nicht benötigt
+
+AllgObj:
+- function TTriaSortList.Find: List^() durch Items[] ersetzt (für XE2)
+
+AllgComp:
+- TTriaGrid.MouseDown: bei EinzelClick in non-ColEdit-Spalte immer FocusCell,
+  auch in EditierMode, damit neue Zeile selektiert wird
+
+AllgFunc:
+- System.UITypes in uses ergänzt für XE2
+- function ZeitInitWert und GleichZeitInitWert neu
+- function ZeitFormatOk: Format UND Inhalt prüfen für Abbruch von Einlesen,
+                         Initwert bleibt zulässig
+
+TztAllg:
+- Windows in uses ergänzt (XE2)
+- TTztObj: neu: function InitWert ersetzt allgemeine funktion TztInitWert
+- TtztColl: neu: SnrSortList um schnell Anzahl Zeitnahmen zu  berechnen
+- SnrNameListe,StartlisteDateiName neu für Startliste
+- MinBreiteArray für verschiedene Spaltenformate
+
+TztDat:
+- DateiKopieren: letzte Zieldatei wird voreingestellt.
+  In var KopierDatei gespeichert und in Ini gesichert.
+- neu: StartlisteDateiLaden
+
+TztMain:
+- SetzeZeitFormat: TztDatModified:=true entfernt, falsch für TztConfig und TztDat
+  wird nur für TztOptDlg benötigt und dort extra gesetzt
+  bei laden einer Datei mit andererem Zeitformat wird TztDatModified gesetzt
+- Tastatur-Hook für Funktionstaste F5, damit F5 immer funktioniert, auch wenn ein
+  Dialog geöffnet ist. Wichtig für remote Zeitnahme.
+  Einzige Bedingung: TriaZeit-Fenster muss das aktive Fenster sein
+- Optional Spalte mit Namen aus Startliste-Datei, Warnung wenn Snr unbekannt
+- Optional Spalte mit Anzahl Zeitnahmen, Warnung bei Überschreitung Limit
+
+TztOptDlg:
+- neue TAB: Ansicht
+
+TztConfig:
+- Classes in uses (XE2)
+- LadeKonfiguration: bei WindowState = wsMaximized/Minimized wsNormal mit
+  Min-Groesse einstellen
+  UpdateLayout nachdem alle relevante Werte festgelegt sind
+
+TztStrtLst:
+- Neu zur Anzeige der aus Tria importierten Startliste.
+
+hh, hh_funcs:
+- korrigiert für Delphi XE2:
+  - $warn SYMBOL_PLATFORM off verursacht offenbar Absturz IDE,
+    sicherheitshalber alle Compiler-Dirs auskommentiert
+  - function HelpHook: Longint durch Nativeint ersetzt
+
+--------------------------------------------------------------------------------
+09.02.2015: 5.0 Released
+--------------------------------------------------------------------------------
+
+################################################################################
+Version 5.1:
+================================================================================
+
+TztMain:
+- ZeitnahmeActionExecute: Beep bei Anzahl- oder Name-Fehler
+
+--------------------------------------------------------------------------------
+09.02.2015: 5.1 Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 5.2:
+================================================================================
+
+AllgFunc, TztDat:
+- function ZeitFormatOk: '.' und ',' als Trennzeichen zulassen (Anpassung an Tria)
+
+TztUpdDlg:
+- Fehlerkorrektur: LHandler: TIdSSLIOHandlerSocketOpenSSL ergänzt, sonst
+  Exception in IdHTTP.Get - seit Umstellung von www.selten.de auf SSL / HTTPS
+  wie in Tria
+
+AllgConst,AllgFunc,AllgObj,AllgComp:
+- an Tria angepasst
+
+--------------------------------------------------------------------------------
+22.02.2016: 5.2 Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 5.3:
+================================================================================
+
+AllgComp:
+- TTriaGrid.KeyDown:
+  Keys: $60..$69: für NumPad 0..9 ergänzt
+  GetCharFromVirtualKey(..) ersetzt Char(..) damit $60..$69 Ziffern richtig umgewandelt werden
+
+TztUpdDlg:
+- PadFileLesen:  bei Get-Exception IOHandler := nil;
+  ohne SSL-Handler probieren, falls zukünftig kein SSL auf Website
+
+
+--------------------------------------------------------------------------------
+09.04.2016: 5.3 Released
+--------------------------------------------------------------------------------
+
+
+################################################################################
+Version 5.4:
+================================================================================
+
+TztUpdDlg:
+- auf Homepage werden xml- und exe-dateien nicht mehr auf https umgeschaltet,
+  weil Tria-Zugriff nicht funktioniert. Veraltetes protokoll wird nach
+  1&1-Vertragsänderung nicht mehr unterstützt.
+  IdSSLOpenSSL nicht mehr benutzt, zurück nach altem Zustand.
+- TriaMessage auf DialogForm zentriert
+
+AllgComp:
+- TTriaMaskEdit.Change: UpDown-Limits werden erst bei Exit in Validate geprüft,
+  damit keine Fehlermeldung bei ungültiger Zwischenstand während Eingabe
+- TTriaUpDown.Click: FEdit.ValidateEdit ergänzt, weil bei Click Validate nicht
+  automatisch ausgeführt wird.
+- TTriaCustomMaskEdit:
+  ZahlFormat : TZahlFormat ergänzt für Prüfung ohne EditMask
+- TTriaGrid.KeyDown: Überschreiben und BlockCursor nur wenn IsMasked,
+  Bei VK_DELETE: Text := '' statt '0'
+- TTriaGrid.SetColEditMode: BlockCursor nur wenn IsMasked
+- TTriaGrid.ColEditBreite: anpassung für RfidModus
+- TTriaCustomMaskEdit.KeyPress: prüfen auf zfDez und zfHex wenn not IsMasked
+- TTriaMaskEdit.KorrigiereCursor: ändern nur für wenn IsMasked
+- TTriaMaskEdit.Change: ändern nur für wenn IsMasked,
+  UpDown-Limits nicht mehr prüfen, sondern in Validate
+- TTriaMaskEdit.Create: TextAlt := '' statt '0'
+- TTriaUpDown.Click: FEdit.ValidateEdit ergänzen, weil dies bei Exit aus FEdit
+  hier nicht automatisch ausgeführt wird
+
+AllgConst:
+- TTrzDateiFormat: neu fzSonstig für fleibles Format,
+  neu  TZahlFormat = (zfKein,zfDez,zfHex) für rfid-Prüfung
+- Rfid - Konstanten
+
+AllgFunc:
+- TriaMessage wird mit CreateMessageDialog im Form zentriert und mit Form als
+  zusätzlicher Parameter
+- zusätzliche Rfid-Prüfungen (RfidCodeValid, etc.)
+- AddLeadZero: auch bei LeerString
+
+TztAllg:
+- TTztColl TztBuffColl nicht sortieren (smNichtSortiert)
+- MinBreiteArray ergänzt für Snr/Rfid
+- TTztObj.SetSnrRfid statt SetSnr
+- TTztObj.InitWert: ergänzt für Rfid (= '')
+
+TztConfig:
+- LadeKonfiguration: Layout auf Hauptbildschirm für MultiScreen angepasst
+  SetBounds benutzt damit Align nur 1x aufgerufen wird
+- Rfid Werte ergänzt
+
+TztDat:
+- UpdateLayout statt SetzeFontSizeMax wegen Zeitformat
+- DateiNeu:  UpdateLayout statt SetzeFontSizeMax // wegen Zeitformat
+- DateiLesen: ergänzt für Rfid-Code
+  Abfragen wenn ZeitFormatBuf <> ZeitFormat
+  Bei Rfid-Fehler abfragen ob abgebrochen werden soll, nicht grundsätzlich abbrechen
+  Genauere Fehlermeldung
+
+TztDruck:
+- Drucken: kein Druck wenn ItemCount=1 und Initwert
+  InitWert am Ende nicht mitdrucken
+- function TztText: für RfidCode ergänzt, mindestens 4 Zeichen
+
+TztOptDlg:
+- TriaMessage auf DialogForm zentriert
+- Cancel false gesetzt für CancelButton, damit das Fendte nicht mit Esc geschlossen wird
+- ZeitNahmeGB für Rfid/Snr-Einstellungen, wie Tria
+- OkButtonClick: ValidateEdit für Edits ergänzt, weil Validate nicht automatisch
+  ausgeführt wird bei ENTER-Taste
+
+TztStrtLst:
+- Liste zentriert
+
+TztMain:
+- für Multiscreen mit mehreren Monitoren angepasst
+- poScreenCenter statt poDesktopCenter , wird bei mehreren Monitoren über alle zentriert
+- Screen.WorkAreaHeight/Width (=Hauptbildschirm) durch Self.Monitor.WorkAreaRect.Height/Width
+  (= BenutzerBildschirm) ersetzt
+- Maus kann für remote Zeitnahme über dem Button "Zeitnahme" eingesperrt werden.
+- Zeitnahme in EditierMode:
+    nur bei remote Zeitnahme (mit F5 oder gesperrtem MausKlick) EditMode und ColEditMode
+    nicht ändern und Zeit in der ersten Zeile ohne Zeit eintragen.
+    Nur wenn keine fehlende Zeit vorhanden oder gültige Snr oben eingetragen, neuer Eintrag erstellen
+    und am Ende (unsortiert) hinzufügen.
+    Bei sonstiger Zeitnahme (Alt-Z) oder Menüklick wie bisher EditierMode zurücksetzen
+    und neuer Zeit-Eintrag erstellen und entsprechend Sortierung einfügen oder anhängen.
+- Zeitnahme in Zeitnahme Modus:
+    wie bisher neuer Zeit-Eintrag erstellen und entsprechend Sortierung einfügen oder anhängen.
+- TztGridKeyPress: EditierMode nicht mehr mit ESC ausschalten, wegen Remote Zeitnahme
+- Vcl.AppEvnts in uses ergänzen
+- MausSperrenAction neue Aktion
+- neuer Prozedur AppActivate: nach DeActivate/Activate Maus-Sperrung ggf. wieder herstellen
+- MausFixEdit neu: Info über Maus-Freigabe
+- neue Funktionen: TztGridSnrText,-Anzahl,-Name
+- procedure AlignControls mit Mausposition Fixieren
+- UpdateLayout: AlignControls(nil,ARect) aufrufen,
+  SnrRfidEdit.EditMask := '', damit kein blauer BlockCursor
+- AlignControls: Form Align wenn Acontrol=nil. Hier feste Werte nur 1x berechnen
+- SetzeFontSizeMax für ClientRect berechnen statt Width/Height und für alle Fonts
+- SetzeFontSizeMax: Constraints nicht ändern, fest für Mindest-Fontsize in Create
+- procedure SetzeNumFonts mit nicht-prop Schrift Consolas für Rfid
+- InitMinBreiteArr entfernt, MinBreite immer neu berechnet
+- FormPaint:
+
+
+================================================================================
+
+
+}
+
+end.
+

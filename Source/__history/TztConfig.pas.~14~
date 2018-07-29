@@ -1,0 +1,303 @@
+unit TztConfig;
+
+interface
+
+uses Windows, SysUtils, Dialogs, Classes,
+     AllgConst,TztHistory;
+
+procedure LadeKonfiguration;
+procedure SpeichereKonfiguration;
+
+
+implementation
+
+uses IniFiles,Forms,Math,ShlObj,
+     AllgObj,MruObj,TztMain,TztDat,TztAllg,AllgFunc,
+     TztUpdDlg,TztStrtLst;
+
+//******************************************************************************
+procedure LadeKonfiguration;
+//******************************************************************************
+var
+  i,Links,Oben,Breite,Hoehe : Integer;
+  IniDatei,S : String;
+  Bool : Boolean;
+  pIdL: PItemIDList;
+  Path : Array[0..1023] of Char;
+
+begin
+  SHGetSpecialFolderLocation(0,CSIDL_APPDATA,pIdL);
+  SHGETPathFromIDList(pIdL,Path);
+  IniDatei := Path;
+  IniDatei := IniDatei + '\' + cnTriProg + '\' + SysUtils.ExtractFileName(ParamStr(0));
+  IniDatei := SysUtils.ChangeFileExt(IniDatei,'.ini'); //TriaZeit.ini
+  if not SysUtils.FileExists(IniDatei) then
+    // alte Ini aus 1.0 verwenden, wenn vorhanden
+    if SysUtils.FileExists(SysUtils.ChangeFileExt(ParamStr(0),'.ini')) then
+      IniDatei := SysUtils.ChangeFileExt(ParamStr(0),'.ini');
+
+  with TztHauptDlg do
+  begin
+    Links  := Left;
+    Oben   := Top;
+    Breite := Width;
+    Hoehe  := Height;
+
+    if SysUtils.FileExists(IniDatei) then
+      with TIniFile.Create(IniDatei) do
+      try
+        // Layout
+        i := ReadInteger(iiLayout,iiState,0);
+        if TWindowState(i) = wsNormal then // Abmessungen übernehmen
+        begin
+          WindowState := wsNormal;
+          Position := poDesigned;
+          // auf nutzbarem Bereich auf Hauptbildschirm (Primary=true) beschränken,
+          // auch bei mehreren Bildschirme
+          i := ReadInteger(iiLayout,iiHeight,Hoehe);
+          if i < Constraints.MinHeight then Hoehe := Constraints.MinHeight
+          else if i > Monitor.WorkAreaRect.Height then Hoehe := Monitor.WorkAreaRect.Height
+          else Hoehe := i;
+          i := ReadInteger(iiLayout,iiWidth,Breite);
+          if i < Constraints.MinWidth then Breite := Constraints.MinWidth
+          else if i > Monitor.WorkAreaRect.Width then Breite := Monitor.WorkAreaRect.Width
+          else Breite := i;
+          i := ReadInteger(iiLayout,iiTop,Oben);
+          if i < Monitor.Top then Oben := Monitor.Top
+          else if i > Monitor.WorkAreaRect.Height-Hoehe then
+            Oben := Monitor.WorkAreaRect.Height-Hoehe
+          else Oben := i;
+          i := ReadInteger(iiLayout,iiLeft,Links);
+          if i < Monitor.Left then Links := Monitor.Left
+          else if i > Monitor.WorkAreaRect.Width-Breite then
+            Links := Monitor.WorkAreaRect.Width-Breite
+          else Links := i;
+        end else
+          WindowState := wsNormal; // Position und Abmessungen aus Create beibehalten
+
+        // Optionen
+        AutoUpdate  := ReadBool(iiOptions,iiAutoUpdate,opAutoUpdate);
+        UpdateDatum := ReadString(iiOptions,iiUpdateDatum,opUpdateDatum);
+        MruDateiOeffnen := ReadBool(iiOptions,iiMruDateiOeffnen,opMruDateiOeffnenTrz);
+        i := ReadInteger(iiOptions,iiAutoSpeichern,opAutoSpeichernTrz);
+        AutoSpeichernInterval := i;
+        if (i<=0) or (i>cnAutoSpeichernTrzMax) then AutoSpeichernInterval := 0
+                                               else AutoSpeichernInterval := i * 1000; // Sek => mSek
+        BackupErstellen := ReadBool(iiOptions,iiBackupErstellen,opBackupErstellenTrz);
+
+        S := ReadString(iiOptions,iiZeitFormat,opZeitSek);
+        if S = opZeitHundertstel then ZeitFormat := zfHundertstel
+        else if S = opZeitZehntel then ZeitFormat := zfZehntel
+        else ZeitFormat := zfSek;
+        S := ReadString(iiOptions,iiZeitGleich,opZeitGleichNok); // alter Wert als default
+        if S = opZeitGleichOk then ZeitGleich := zgGleichOk
+        else ZeitGleich := zgGleichNok;
+
+        DecTrennZeichen := ReadString(iiOptions,iiDecTrennZeichen,opDecTrennZeichen);
+        // nur '.' oder ',' zulassen
+        if DecTrennZeichen <> '.' then DecTrennZeichen := ',';
+
+        if ValueExists(iiOptions,iiTimerModus) then // Ini > 4.0
+        begin
+          S := ReadString(iiOptions,iiTimerModus,opUhrzeit);
+          if S = opUhrzeit then
+            SetzeTimerModus(zmUhrZeit)
+          else
+          if S = opStop then
+            SetzeTimerModus(zmStop)
+          else  // opRun, opStart
+          begin
+            S := ReadString(iiOptions,iiStartZeit,opStartzeit);
+            i := UhrZeitWert100(S); // immer in Hundertstel gespeichert
+            if i >= 0 then
+            begin
+              StartUhrZeit := i; // nur gültige Zeit übernehmen
+              SetzeTimerModus(zmRun);
+            end else
+              SetzeTimerModus(zmStop); // sollte nicht vorkommen
+          end;
+        end else // Ini <= 4.0
+        begin
+          Bool := ReadBool(iiOptions,iiStoppUhr,false);
+          if Bool then SetzeTimerModus(zmStop)
+                  else SetzeTimerModus(zmUhrZeit);
+        end;
+
+        BeepSignal   := ReadBool(iiOptions,iiBeepSignal,opBeepSignal);
+        SpalteTln    := ReadBool(iiOptions,iiSpalteTln,false);
+        SpalteZahl   := ReadBool(iiOptions,iiSpalteZahl,false);
+        RndCheckZahl := Max(1,ReadInteger(iiOptions,iiRndCheckZahl,1)); // default=1
+
+        // Sortierung
+        i := ReadInteger(iiOptions,iiSortierung,0); // default smZeitAuf
+        case i of
+          1: SetSortMode(smTztSnrAb);
+          2: SetSortMode(smTztSnrAuf);
+          3: SetSortMode(smTztZeitAb);
+          else SetSortMode(smTztZeitAuf); // 0, >3
+        end;
+        KopierDatei := Trim(ReadString(iiOptions,iiKopierDatei,''));
+        StartlisteDateiName := Trim(ReadString(iiOptions,iiStartlisteDatei,''));
+        // MruDateiListe
+        for i:=1 to cnMruMaxCount do
+          MruListe.PfadListe[i]:=ReadString(iiMruListe,IntToStr(i),'');
+        MruListe.Init;
+      finally
+        Free;
+      end;
+
+    // falls nötig SpalteTln korrigieren
+    if SpalteTln and // noch nicht laden, nur verfügbarkeit prüfen
+       ((StartlisteDateiName = '') or not SysUtils.FileExists(StartlisteDateiName) ) then
+      SpalteTln := false;
+
+    // Hauptfenster sichtbar machen nachdem Layout definiert ist,
+    // aber bevor Datei geladen wird
+    UpdateLayout; // ColCount und MinWidth, abhängig von SpalteTln und SpalteZahl
+    SetBounds(Links,Oben,Breite,Hoehe);
+    AutoUpdateAktiv := true; // damit alle Actions in SetzeButtons disabled
+    SetzeButtons; // alles disabled
+
+    TztGrid.Invalidate;
+    Invalidate;
+    Show;
+
+    if AutoUpdate and (UpdateDatum <> SystemDatum) then // max 1x täglich
+    begin
+      UpdateDatum := SystemDatum;
+      InternetUpdate(umAuto);
+      if SetupGestartet then Close;
+    end;
+    AutoUpdateAktiv := false;
+
+    // Bei Trz-Datei-Execute Datei öffnen, sonst neue Datei
+    if ParamCount > 0 then
+    begin
+      MruListe.AddiereDatei(ParamStr(1));
+      DateiNeu(MruListe[1]);
+    end else
+      if MruDateiOeffnen then DateiNeu(MruListe[1])
+                         else DateiNeu('');
+
+    // StartlisteDatei lesen nachdem Fenster sichtbar und Trz-Datei geladen ist
+    if SpalteTln then
+      StartlisteDateiLaden(StartlisteDateiName);
+    TztHauptDlg.ShowTlnLstAction.Enabled := SnrNameListe.Count > 0;// Anzeigen geht hier nicht
+    SnrNameListeAltNull := SnrNameListe.Count <> 0; // LayoutUpdate erzwingen
+
+    UpdateLayout;
+    TztGrid.Invalidate;
+    Repaint;
+
+  end;
+end;
+
+//******************************************************************************
+procedure SpeichereKonfiguration;
+//******************************************************************************
+var
+  i : Integer;
+  IniDatei,S : String;
+  pIdL: PItemIDList;
+  Path : Array[0..1023] of Char;
+
+begin
+
+  SHGetSpecialFolderLocation(0,CSIDL_APPDATA,pIdL);
+  SHGETPathFromIDList(pIdL,Path);
+  S := Path;
+  S := S + '\' + cnTriProg;
+  if not DirectoryExists(S) then
+    if not CreateDir(S) then
+    begin
+      TriaMessage('Fehler beim Erstellen des Verzeichnisses '+S,
+                   mtInformation,[mbOk]);
+      Exit;
+    end;
+  IniDatei := S + '\' + SysUtils.ExtractFileName(ParamStr(0));
+  IniDatei := SysUtils.ChangeFileExt(IniDatei,'.ini'); //TriaZeit.ini
+  //DeleteFile(PAnsiChar(IniDatei)); // damit alte Inhalte immer gelöscht werden
+  SysUtils.DeleteFile(IniDatei); // damit alte Inhalte immer gelöscht werden
+
+  with TIniFile.Create(IniDatei) do
+  try
+    try
+      // Layout
+      with TztHauptDlg do
+      begin
+        WriteInteger(iiLayout,iiState,Integer(WindowState));
+        WriteInteger(iiLayout,iiHeight,Height);
+        WriteInteger(iiLayout,iiWidth,Width);
+        WriteInteger(iiLayout,iiTop,Top);
+        WriteInteger(iiLayout,iiLeft,Left);
+      end;
+      // Optionen
+      WriteBool(iiOptions,iiAutoUpdate,AutoUpdate);
+      WriteString(iiOptions,iiUpdateDatum,UpdateDatum);
+      WriteBool(iiOptions,iiMruDateiOeffnen,MruDateiOeffnen);
+      i := TztHauptDlg.AutoSpeichernInterval;
+      if i > 0 then i := i DIV 1000; // mSek => Sek
+      WriteInteger(iiOptions,iiAutoSpeichern, i);
+      WriteBool(iiOptions,iiBackupErstellen,BackupErstellen);
+      case ZeitFormat of
+        zfSek     : WriteString(iiOptions,iiZeitFormat,opZeitSek);
+        zfZehntel : WriteString(iiOptions,iiZeitFormat,opZeitZehntel);
+        else        WriteString(iiOptions,iiZeitFormat,opZeitHundertstel);
+      end;
+      if ZeitGleich = zgGleichOk then
+        WriteString(iiOptions,iiZeitGleich,opZeitGleichOk)
+      else
+        WriteString(iiOptions,iiZeitGleich,opZeitGleichNok);
+      //if SnrFocus = sfSnrGrid then
+      //  WriteString(iiOptions,iiSnrFocus,opSnrGridFocus)
+      //else
+      //  WriteString(iiOptions,iiSnrFocus,opSnrEditFocus);
+      WriteString(iiOptions,iiDecTrennZeichen,DecTrennZeichen);
+      {if TimerModus=zmUhrZeit then WriteBool(iiOptions,iiStoppUhr,false)
+                              else WriteBool(iiOptions,iiStoppUhr,true);}
+      case TimerModus of
+        zmStop  : WriteString(iiOptions,iiTimerModus,opStop);
+        zmStart : WriteString(iiOptions,iiTimerModus,opStart);
+        zmRun   : WriteString(iiOptions,iiTimerModus,opRun);
+        else      WriteString(iiOptions,iiTimerModus,opUhrZeit);
+      end;
+      if (TimerModus = zmStart) or (TimerModus = zmRun) then // Startzeit in Hundertstel speichern
+        WriteString(iiOptions,iiStartzeit,UhrZeitStr(zfHundertstel,TztHauptDlg.StartUhrzeit))
+      else
+        WriteString(iiOptions,iiStartzeit,'');
+      WriteBool(iiOptions,iiBeepSignal,BeepSignal);
+      WriteBool(iiOptions,iiSpalteZahl,SpalteZahl);
+      WriteInteger(iiOptions,iiRndCheckZahl,RndCheckZahl);
+      WriteBool(iiOptions,iiSpalteTln,SpalteTln);
+      // Sortierung
+      case TzthauptDlg.TztGrid.Collection.SortMode of
+        smTztSnrAb  : i := 1;
+        smTztSnrAuf : i := 2;
+        smTztZeitAb : i := 3;
+        else          i := 0; // smTztZeitAuf
+      end;
+      WriteInteger(iiOptions,iiSortierung,i);
+      WriteString(iiOptions,iiKopierDatei,KopierDatei);
+      WriteString(iiOptions,iiStartlisteDatei,StartlisteDateiName);
+
+      // MruDateiListe
+      for i:=1 to cnMruMaxCount do
+      begin
+        S := TztHauptDlg.MruListe.PfadListe[i];
+        if not StrGleich(S,'') then
+          WriteString(iiMruListe,IntToStr(i),S);
+      end;
+
+    except
+      // Exceptions abfangen, auch bei Exceptions soll Programm beendet werden
+      TriaMessage('Fehler beim Speichern der aktuellen Konfiguration in '+#13+
+                  'Datei '+IniDatei,
+                   mtInformation,[mbOk]);
+    end;
+  finally
+    Free;
+  end;
+end;
+
+
+end.

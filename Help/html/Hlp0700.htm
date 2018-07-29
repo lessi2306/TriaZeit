@@ -1,0 +1,95 @@
+<html>
+<head>
+<Title>Optionen</Title>
+<link rel="stylesheet" type="text/css" href="TriaHilfe.css">
+<meta name="author" content="Gerhard Selten">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<Object type="application/x-oleobject" classid="clsid:1e2a7bd0-dab9-11d0-b93a-00c04fc99f9e">
+	<param name="Keyword" value="Programmversion">
+	<param name="Keyword" value="Update">
+	<param name="Keyword" value="Internet">
+	<param name="Keyword" value="Default-Einstellung">
+	<param name="Keyword" value="Vorgabe">
+	<param name="Keyword" value="Speichern">
+	<param name="Keyword" value="Sicherungskopie">
+	<param name="Keyword" value="identische Zeiten verhindern">
+	<param name="Keyword" value="Zeitformat">
+	<param name="Keyword" value="Sekunden">
+	<param name="Keyword" value="Zehntelsekunden">
+	<param name="Keyword" value="Hundertstelsekunden">
+	<param name="Keyword" value="Programmstart">
+	<param name="Keyword" value="Stoppuhr-Modus">
+	<param name="Keyword" value="Uhrzeit-Modus">
+	<param name="Keyword" value="Datensicherung">
+	<param name="Keyword" value="Ansicht">
+	<param name="Keyword" value="Startliste">
+</OBJECT>
+<h1>Optionen</h1>
+<p>
+Die nachfolgend beschriebenen Optionen können unter dem Menüpunkt "Extras" eingestellt werden.<br>
+In den Bildern sind die Default-Einstellungen abgebildet. Nach einer Änderung, können diese mit Hilfe der Schaltfläche "Vorgabe" wieder hergestellt werden.</p>
+<br>
+<h2>Allgemein</h2>
+<p>
+Beim Programmstart kann automatisch überprüft werden, ob eine neuere Programmversion im Internet <a href="http://www.selten.de/" target="_blank">(www.selten.de)</a> verfügbar ist. Diese Prüfung wird höchstens einmal am Tag durchgeführt.</p>
+<p>
+  <img src="img/opt1.gif" alt="Allgemein" width="385" height="296" border="0"></p>
+<p>
+Wenn die zweite Option nicht ausgewählt wird, wird beim Programmstart grundsätzlich eine neue leere Datei erstellt.</p>
+<br>
+<h2>Zeitnahme</h2>
+<p>
+Bei der Zeitnahme kann entweder eine Startnummer oder eine Transpondernummer (RFID Chip Code) zur Identifizierung des Teilnehmers eingegeben werden. Beide Modi sind auch in Tria vorhanden und sollten dort auch gleich eingestellt werden, damit die TriaZeit-Datei in Tria korrekt eingelesen werden kann.</p>
+<p>
+  <img src="img/opt2.gif" alt="Zeitnahme" width="371" height="317" border="0"></p>
+<p>
+In der Default-Einstellung wird die aktuelle Tagesuhrzeit für die Zeitnahme verwendet. Wenn der Stopp-Modus aktiviert wird, wird die Zeit angehalten und auf 00:00:00 zurückgesetzt. Nach einem Klick auf die Start-Schaltfläche läuft die Uhr los und können Zeiten eingetragen werden.</p>
+<p>
+Startmodus und Startzeit werden gespeichert, damit nach Beenden des Programms und anschließendem Neustart, die Uhr korrekt weiterläuft, auch im Stoppuhr-Modus. Dies funktioniert auch nach einem Rechnerausfall.</p>
+<p>
+Wenn die zweite Option aktiviert wird, wird bei jeder Zeitnahme ein akustisches Signal generiert.</p>
+<p>
+Mit der dritten Option kann verhindert werden, dass bei aufeinander folgenden Eingaben die gleiche Zeit zugeordnet wird. Wenn eine Zeitnahme erfolgt bevor die Zeit sich seit der letzten Zeitnahme geändert hat (und nur dann), wird diese entsprechend verzögert.</p>
+<p>
+Das ist Sinnvoll, insbesondere bei einer Zeitnahme in Sekunden, um zu gewährleisten, dass Teilnehmer, die kurz nacheinander ins Ziel laufen, später in Tria auch in der richtigen Reihenfolge gewertet werden.</p>  
+<p>
+Wenn Teilnehmer gemeinsam ins Ziel laufen, und eine gleiche Platzierung wünschen, so können die Zeiten nachträglich entsprechend korrigiert werden.</p>
+<br>
+<h2>Zeitformat</h2>
+<p>
+In der Default-Einstellung werden alle Zeiten in Sekunden dargestellt. Optional ist auch die Darstellung in Zehntel- oder Hundertstelsekunden möglich. Dabei kann als Trennzeichen entweder ein Komma oder einen Punkt gewählt werden.</p>
+<p>
+  <img src="img/opt3.gif" alt="Zeitformat" width="385" height="296" border="0"></p>
+<p>
+Eine Zeitmessung in Hundertstelsekunden kann auch sinnvoll sein, wenn die Zeiten in Tria in Sekunden gewertet werden. Dann nämlich, wenn die Zeiten an mehreren Stationen parallel gemessen werden, können durch Rundung auf Sekunden entstandenen Zeitgleichheiten vermieden werden.<br>
+Dazu muss auch Tria beim Einlesen auf Hundertstelsekunden eingestellt sein und erst nach dem Einlesen aller Zeitdateien auf Sekunden umgestellt werden. Unterschiedliche, in Hundertstel eingelesene Zeiten bleiben dann auch nach der Umrechnung in Sekunden unterschiedlich.</p>
+<br>
+<h2>Speichern</h2>
+<p>
+Zur Datensicherung oder für den Tria Live Zeiterfassungsmodus kann die aktuelle Datei bei Änderung automatisch nach einem hier festgelegten Zeitabstand gespeichert werden. Das Intervall kann von 1 bis 99 Sekunden eingestellt werden.<br>
+In der Default-Einstellung ist eine Zeit von 1 Sekunde eingestellt.</p>
+<p>
+  <img src="img/opt4.gif" alt="Speichern" width="385" height="296" border="0"></p>
+<p>
+Als zusätzliche Sicherung kann bei jedem Speichervorgang automatisch eine Sicherungskopie mit der Dateierweiterung .~trz erstellt werden. Diese Option ist in der Default-Einstellung nicht aktiviert.</p>
+<br>
+<h2>Ansicht</h2>
+<p>
+Im Startnummer-Modus können können in der Tabelle zusätzlich zur Startnummer und Zeit weitere Spalten dargestellt werden.</p>
+<ul>
+<li><b>Anzahl Zeitnahmen pro Startnummer:</b><br>
+Diese Spalte zeigt wie oft die Startnummer in der Tabelle insgesamt vorhanden ist. Die Überschreitung eines frei wählbaren Maximalwertes wird optisch und akustisch signalisiert.</li>
+<li><b>Teilnehmername:</b><br>
+Diese Spalte zeigt der Name des mit der Startnummer gemeldeten Teilnehmers. Diese Anzeige ist erst möglich, nachdem eine Liste mit Namen und zugehörigen Startnummern importiert wurde. In dem unten gezeigten Screenshot ist dies noch nicht der Fall.<br> 
+Importiert werden diese Daten aus einer mit Tria als Textdatei exportierten Startliste oder jeder anderen Text- oder CSV-Datei mit durch Semikolon getrennten Startnummern und Teilnehmernamen.<br>
+Mit Tria wird eine Startliste normalerweise nur für jeden Wettkampf einzeln erstellt. Beim Export können jedoch alle Wettkämpfe in einer Datei zusammengefasst werden. Es können also, müssen aber nicht, alle Teilnehmer der Veranstaltung auf einmal importiert werden.</li>
+</ul>
+<p>
+  <img src="img/opt5.gif" alt="Speichern" width="385" height="296" border="0"></p>
+<p>
+Diese Zusatzdaten werden auch bereits während der Eingabe einer Startnummer angezeigt.</p>
+<p>Nach dem Import kann die Startliste in einem zusätzlichen Fenster dargestellt werden. Die Summe der importierten Teilnehmer wird in der Statuszeile am unteren Rand des TriaZeit-Fensters eingetragen. </p> 
+</body>
+</html>

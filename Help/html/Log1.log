@@ -1,0 +1,38 @@
+Microsoft HTML Help Compiler 4.74.8702
+
+Compiling f:\TriaWin\Object\TriaZeit.chm
+
+html\Hlp0100.htm
+html\Hlp0500.htm
+html\Hlp0300.htm
+html\Hlp0400.htm
+html\Hlp0600.htm
+html\Hlp0700.htm
+html\Hlp0800.htm
+TriaZeit.hhc
+TriaZeit.hhk
+html\img\trzshot.gif
+html\img\triazeit4.gif
+html\img\triazeit2.gif
+html\img\bild_auf.gif
+html\img\bild_ab.gif
+html\img\triazeit3.gif
+html\img\opt1.gif
+html\img\opt2.gif
+html\img\opt3.gif
+html\img\abgl1.gif
+html\img\abgl2.gif
+html\img\abgl3.gif
+html\img\abgl4.gif
+html\TriaHilfe.css
+HHC4012: Warning: The string "IDH_AbglTabelle" in line 73 of the file "f:\TriaWin\Hilfe\HTMLHelp\TriaZeit40\TriaZeit.txt" has not been mapped to a number.
+
+Compile time: 0 minutes, 1 second
+9	Topics
+20	Local links
+0	Internet links
+13	Graphics
+
+
+Created f:\TriaWin\Object\TriaZeit.chm, 255,403 bytes
+Compression decreased file by 72 bytes.

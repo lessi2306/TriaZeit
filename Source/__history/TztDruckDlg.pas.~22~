@@ -1,0 +1,291 @@
+unit TztDruckDlg;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs,Printers,Math,WinSpool;
+
+procedure Drucken;
+
+
+type
+  TDruckForm = class(TForm)
+    PrintDialog: TPrintDialog;
+  private
+    { Private-Deklarationen }
+  public
+    { Public-Deklarationen }
+  end;
+
+  {TMargins = record
+    Left,
+    Top,
+    Right,
+    Bottom: Double;
+  end; }
+
+const
+  cnZeilenHoeheTitel = 48;  // in 0.1mm
+  cnZeilenHoeheText  = 36;
+  cnLinienBreite     = 3;
+  cnHeaderHoehe      = 260;
+  cnFooterHoehe      = 200;
+  cnRandLinks        = 160;
+  cnSpaltenZahlMax   = 8;
+var
+  DruckForm: TDruckForm;
+  Title: string;
+  AnzSeiten, Zeilen, Spalten : Integer;
+  // Maßen in Pixel
+  PixPerInchX, PixPerInchY,PhysBreite,PhysHoehe,
+  Breite,Hoehe,HeaderHoehe,FooterHoehe,
+  RandLinks,RandOben,RandRechts,RandUnten,SpaltenBreite,SpaltenMargin : Integer;
+  SpaltenOffset : array[0..cnSpaltenZahlMax-1] of Integer;
+  FontText, FontData : String;
+
+function TztText(Indx:Integer): String; forward;
+procedure DruckeHeader(VertOffset: Integer); forward;
+procedure SeiteDrucken(Seite:Integer); forward;
+//procedure GetPrinterMargins(var Margins: TMargins); forward;
+function  MmToPixelX(Dec:Integer): Integer;  forward;
+function  MmToPixelY(Dec:Integer): Integer;   forward;
+
+
+implementation
+
+uses AllgConst,AllgFunc,TztMain,TztAllg,TztDat,VistaFix;
+
+{$R *.dfm}
+
+//******************************************************************************
+procedure Drucken;
+//******************************************************************************
+var
+  Seite,MaxZeilen, SeiteBis, W, Rest,i : Integer;
+
+begin
+  if (TztColl.Count = 0) or
+     (TztColl.Count = 1) and TztColl[0].InitWert then
+  begin
+    TriaMessage('Es sind keine Eingaben vorhanden.',
+                 mtInformation,[mbOk]);
+    Exit;
+  end;
+
+  with DruckForm.PrintDialog do
+  begin
+    //type TPrintDialogOption = (poPrintToFile, poPageNums, poSelection, poWarning,
+    //                           poHelp, poDisablePrintToFile);
+    Options := [poPageNums];
+    MinPage := 1;
+    MaxPage := 999;
+    FromPage := 1;
+    ToPage := 1;
+    Copies := 1;
+    Collate := true;
+    // set PD_USEDEVMODECOPIESANDCOLLATE flag in Flags member of PRINTDLG structure
+    // disables Collate checkbox and Numberof Copies edit control unless printer
+    // driver supports copies and collation
+    // OR provide support in software
+    if not Execute then Exit;
+  end;
+{ Tprinter.Capabilities: alle Caps gesetzt bei allen Druckern
+type TPrinterCapability = (pcCopies, pcOrientation, pcCollation);
+pcCopies      : Der Benutzer kann die Kopienanzahl eingeben.
+pcOrientation : Der Benutzer kann zwischen Hoch- und Querformat wählen.
+pcCollation   : Der Benutzer kann angeben, ob die Kopien sortiert werden sollen.
+}
+
+  Title  := Application.Title + '  -  '+ SysUtils.ExtractFileName(TztDatName);
+  //Printer initializieren
+  //Printer.Orientation := Orientation; in PrintDialog gesetzt
+  Printer.Title := Title;
+  Printer.BeginDoc;
+
+  if Printer.Fonts.Count > 0 then
+  with Printer do
+    begin
+      if Fonts.IndexOf('Courier New') >= 0 then FontData := 'Courier New'
+      else if Fonts.IndexOf('Courier') >= 0 then FontData := 'Courier';
+      if Fonts.IndexOf('Verdana') >= 0 then FontText := 'Verdana'
+      else if Fonts.IndexOf('Arial') >= 0 then FontText := 'Arial';
+    end
+  else Exit;
+
+  // Lese PrinterEigenschaften
+  PixPerInchX := GetDeviceCaps(Printer.Canvas.Handle, LOGPIXELSX);
+  PixPerInchY := GetDeviceCaps(Printer.Canvas.Handle, LOGPIXELSY);
+  PhysBreite  := GetDeviceCaps(Printer.Canvas.Handle, PHYSICALWIDTH);
+  PhysHoehe   := GetDeviceCaps(Printer.Canvas.Handle, PHYSICALHEIGHT);
+  RandLinks   := GetDeviceCaps(Printer.Canvas.Handle, PHYSICALOFFSETX);
+  RandRechts  := PhysBreite - Printer.PageWidth - RandLinks;
+  RandOben    := GetDeviceCaps(Printer.Canvas.Handle, PHYSICALOFFSETY);
+  RandUnten   := PhysHoehe - Printer.PageHeight - RandOben;
+  if (PixPerInchX <= 0) or (PixPerInchY <= 0) then Exit;
+
+  W := SetMapMode(Printer.Canvas.Handle,MM_TEXT);//Pixel einstellen (default)
+  if W=0 then Exit;
+
+  // Maßen berechnen
+  SpaltenOffSet[0] := Max(0,MmToPixelX(cnRandLinks)-RandLinks);//Startposition Links
+  HeaderHoehe := Max(MmToPixelY(cnHeaderHoehe)-RandOben,
+                     MmToPixelY(cnZeilenHoeheTitel+20+cnZeilenHoeheText+10));
+  FooterHoehe := Max(MmToPixelY(cnFooterHoehe)- RandUnten,
+                     MmToPixelY(cnZeilenHoeheText+20));
+  Breite      := Printer.PageWidth - SpaltenOffSet[0];
+  Hoehe       := Printer.PageHeight - HeaderHoehe - FooterHoehe;
+
+  //Spaltenanzahl und -Margin festlegen
+  Printer.Canvas.Font.Height := MmToPixelY(cnZeilenHoeheText);
+  Printer.Canvas.Font.Name := FontData;
+  SpaltenBreite := Printer.Canvas.TextWidth(TztText(1));
+  SpaltenMargin := Printer.Canvas.TextWidth('00'); //3 Stellen mit Blank am Ende
+  if (SpaltenBreite=0) or (SpaltenMargin=0) then Exit;
+
+  // 2mm Marge an rechte Seiten
+  Spalten := Min(cnSpaltenZahlMax,
+      (Breite+SpaltenMargin-MmToPixelX(20)) DIV (SpaltenBreite+SpaltenMargin));
+  Rest := Breite - SpaltenBreite*Spalten - SpaltenMargin*(Spalten-1);
+
+  while (RandRechts+Rest > RandLinks+SpaltenOffSet[0]) and (Rest > 0) do
+  begin
+    Rest := Rest-10;
+    if Rest > 0 then SpaltenOffSet[0] := SpaltenOffSet[0] + 10;
+    Rest := Rest-(Spalten-1)*5 ;
+    if Rest > 0 then SpaltenMargin := SpaltenMargin + 5;
+  end;
+  Breite  := SpaltenBreite*Spalten + SpaltenMargin*(Spalten-1);
+
+  for i:=1 to Spalten-1 do
+    SpaltenOffSet[i] := SpaltenOffSet[0] + (i)*(SpaltenBreite+SpaltenMargin);
+
+  //Zeilen- und Seitenanzahl ermitteln
+  // Marge: 1 mm oben, 1 mm unten
+  Zeilen := (Hoehe-MmToPixelY(20)) DIV MmToPixelY(cnZeilenHoeheText);
+  if :=
+  if TztColl.Count MOD Spalten <> 0 then
+    MaxZeilen := TztColl.Count DIV Spalten + 1
+  else MaxZeilen := TztColl.Count DIV Spalten;
+  if MaxZeilen MOD Zeilen <> 0 then
+    AnzSeiten := MaxZeilen DIV Zeilen + 1
+  else AnzSeiten := MaxZeilen DIV Zeilen;
+
+  // Liste Drucken
+  // Kopien und Sortieren werden vom TPrinter gesteuert
+  with DruckForm.PrintDialog do
+  begin
+    if PrintRange = prAllPages then SeiteBis := AnzSeiten
+                               else SeiteBis := Min(ToPage,AnzSeiten);
+    for Seite:= FromPage to SeiteBis do
+    begin
+      SeiteDrucken(Seite);
+      if Seite < SeiteBis then Printer.NewPage;
+    end;
+  end;
+  Printer.EndDoc;
+end;
+
+//******************************************************************************
+function TztText(Indx:Integer): String;
+//******************************************************************************
+begin
+  with TztColl do
+  if (Indx > 0) and (Indx <= SortCount) then
+    Result := Format('%4u. %s %s',[IndexOf(SortItems[Indx-1])+1,
+                                   SortItems[Indx-1].SnrRfid, SortItems[Indx-1].Zeit])
+  else Result := '';
+end;
+
+//******************************************************************************
+procedure DruckeHeader(VertOffset: Integer);
+//******************************************************************************
+var i : Integer;
+    S,S1 : String;
+begin
+  if RFIDModus then
+    S1 :=
+  else
+    S1 := ' Snr';
+  case ZeitFormat of
+    zfHundertstel : S := Format('%4s. %s %s',['Nr',S1,'    Zeit   ']);
+    zfZehntel     : S := Format('%4s. %s %s',['Nr',S1,'   Zeit   ']);
+    else            S := Format('%4s. %s %s',['Nr',S1,'  Zeit  ']);
+  end;
+  for i:=0 to Spalten-1 do
+    Printer.Canvas.TextOut(SpaltenOffset[i], VertOffset, S);
+end;
+
+//******************************************************************************
+procedure SeiteDrucken(Seite:Integer);
+//******************************************************************************
+var
+  i,j,YPos : Integer;
+  S : string;
+begin
+  with Printer.Canvas do
+  begin
+    //Kopfzeile
+    Font.Name   := FontText;
+    Font.Height := MmToPixelY(cnZeilenHoeheTitel);
+    TextOut(SpaltenOffSet[0] + Breite DIV 2 - (TextWidth(Title) DIV 2),
+            HeaderHoehe - MmToPixelY(cnZeilenHoeheTitel+20+cnZeilenHoeheText+10),
+            Title);
+    Font.Height := MmToPixelY(cnZeilenHoeheText);
+    S := SystemDatum + ' - ' + SystemZeit;
+    TextOut(SpaltenOffSet[0] + Breite  - (TextWidth(S)),
+            HeaderHoehe - MmToPixelY(cnZeilenHoeheText+20+cnZeilenHoeheText+10),
+            S);
+
+    // Header
+    Pen.Width := MmToPixelY(cnLinienBreite);
+    MoveTo(SpaltenOffSet[0], HeaderHoehe - MmToPixelY(cnZeilenHoeheText+10));
+    LineTo(SpaltenOffSet[0]+Breite,HeaderHoehe-MmToPixelY(cnZeilenHoeheText+10));
+    Font.Name   := FontData;
+    Font.Height := MmToPixelY(cnZeilenHoeheText);
+    DruckeHeader(HeaderHoehe - MmToPixelY(cnZeilenHoeheText));
+    MoveTo(SpaltenOffSet[0], HeaderHoehe);
+    LineTo(SpaltenOffSet[0]+Breite, HeaderHoehe);
+    //Fußzeile
+    Font.Name := FontText;
+    MoveTo(SpaltenOffSet[0], Printer.PageHeight - FooterHoehe);
+    LineTo(SpaltenOffSet[0]+Breite, Printer.PageHeight - FooterHoehe);
+    S := 'Seite: ' + IntToStr(Seite) + ' von ' + IntToStr(AnzSeiten);
+    TextOut(SpaltenOffSet[0] + Breite DIV 2 - (TextWidth(S) DIV 2),
+            Printer.PageHeight - FooterHoehe + MmToPixelY(20), S);
+    //Zeilen drucken
+    Font.Name := FontData;
+    YPos := HeaderHoehe + MmToPixelY(10);
+    for i:=1 to Zeilen do
+    begin
+      if TztColl.SortCount >= i + (Seite-1)*Zeilen*Spalten then
+      begin
+        S := '';
+        for j:=0 to Spalten-1 do
+        begin
+          S := TztText(i + (Seite-1)*Zeilen*Spalten + j*Zeilen);
+          TextOut(SpaltenOffset[j], YPos, S);
+        end;
+        YPos := YPos + MmToPixelY(cnZeilenHoeheText);
+      end;
+    end;
+  end;
+end;
+
+//******************************************************************************
+function  MmToPixelX(Dec:Integer): Integer;
+//******************************************************************************
+begin
+  if PixPerInchX > 0 then Result := (Dec * PixPerInchX) DIV 254
+  else Result := 0;
+end;
+
+//******************************************************************************
+function  MmToPixelY(Dec:Integer): Integer;
+//******************************************************************************
+begin
+  if PixPerInchY > 0 then Result := (Dec * PixPerInchY) DIV 254
+  else Result := 0;
+end;
+
+end.

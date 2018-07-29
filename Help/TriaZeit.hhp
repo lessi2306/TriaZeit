@@ -1,0 +1,40 @@
+[OPTIONS]
+Auto Index=Yes
+Compatibility=1.1 or later
+Compiled file=..\Object\TriaZeit.chm
+Contents file=TriaZeit.hhc
+Default Font=,8,0
+Default Window=TriaZeit - Hilfe
+Default topic=html\Hlp0100.htm
+Display compile progress=Yes
+Full-text search=Yes
+Index file=TriaZeit.hhk
+Language=0x407 Deutsch (Deutschland)
+Title=TriaZeit - Hilfe
+
+[WINDOWS]
+TriaZeit - Hilfe="TriaZeit - Hilfe","TriaZeit.hhc","TriaZeit.hhk","html\Hlp0100.htm","html\Hlp0100.htm",,,,,0x2520,,0x4e,,,,,,,,0
+
+
+[FILES]
+html\Hlp0100.htm
+html\Hlp0500.htm
+html\Hlp0300.htm
+html\Hlp0400.htm
+html\Hlp0600.htm
+html\Hlp0700.htm
+html\Hlp0800.htm
+html\Hlp0450.htm
+
+[ALIAS]
+#include TriaZeit.ali
+
+[MAP]
+#include TriaZeitHlpFile.h
+
+[TEXT POPUPS]
+TriaZeit.txt
+TriaZeitHlpText.h
+
+[INFOTYPES]
+

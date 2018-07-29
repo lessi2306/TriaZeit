@@ -1,0 +1,78 @@
+unit TztToDo;
+
+interface
+
+implementation
+
+{
+
+################################################################################
+################################################################################
+#                                                                              #
+#                                                                              #
+#                             ToDo Liste:                                      #
+#                                                                              #
+#                                                                              #
+################################################################################
+################################################################################
+
+
+
+-----------------------------------------------------------------------------------
+Rene Schmidt: (15.2.2017)
+Ich stelle mir eine Erweiterung für RFID vor.
+Na mir St bekannt, das Sie RFID Systeme grundsätzlich unterstützen, allerdings
+gibt es keine Möglichkeit die Chip Nummern auszuwerten. Wir planen die Ablösung
+unserer SingelRead Technik (LF) gegen eine HF oder UHF Technik und dabei wird das
+ganze schwer sie Startnummer als Eingabe zu bekommen.
+
+Daher würde ich mir ein weiteres Feld RFID Nummer beim Teilnehmer wünschen
+(Alphanumerisch und 24 Stellen) in dem die Chipnummer eingetragen wird. Gerne als Tastatureingabe.
+
+In triakzeit  kann dann entweder die Startnummer eingegeben werden oder die RFID Nummer,
+die über die als Tastatureingabe simuliert wird.
+
+---------------------------------------------------------------------------------
+Ingolf Boehle (9.10.2016)
+10stellig alphanumerisch wäre ideal und teuren Transpondersysteme sind hinfällig,
+bzw. Durch 10 EUR USB Reader zu ersetzen
+ich benutze kein Transpondersystem sondern einfache Transponder  mit einem/mehreren
+USB RFID Readern (10,- EUR Reader).
+Aktuell mache ich das in Excel, aber ihre Software gefällt mir sehr gut, dass ich umsteigen möchte.
+Der USB Reader liest die Werte der Transponder als Tastaturschleife ein.
+Die Werte der Transponder werden so eingelesen:
+0007974590
+0007960290
+0007969306
+0011301835
+0011295456
+
+---------------------------------------------------------------------------------
+Dirk Grundt (21.10.2016):
+mit der vorgeschlagenen Lösung wäre ich doch schon einen Schritt weiter. Als Anlage
+sende ich Ihnen mal eine Beispiel *.txt Datei die aus dem Zeitnahmekoffer ausgelesen wird.
+Die Chipnummern werden in den Stammdaten manuell eingegeben. Das machen die Teilnehmer
+bei der Onlineanmeldung selber. Bei Nachmeldungen wird das am Veranstaltungstag
+manuell eingegeben. Das ist Fehleranfällig, ich weiß. Aber wie soll es sonst gehen?
+Mit dem USB Reader muss ich mal schauen mit welchem Lesergerät ich den RFID auslesen kann.
+Ist eine gute Idee. Mika Timing fragt eine zentrale Datenbank ab wo alle Chipnummern
+gelistet sind. Die Möglichkeit habe ich leider nicht. Es hat aber in der Vergangenheit
+mit verkehrten Chipnummern wenig Probleme gegeben.
+
+ChipsRead_2013-01-02_0001.txt:
+ST00007 22:43:53.8000010  00009      E5
+DZ8S4WN 22:57:14.2000011  0000A      4E
+CA73770 22:57:36.1500013  0000B      E3
+CF79810 22:57:39.5500017  0000C      F5
+DF7H357 22:58:13.1500013  0000D      FD
+DR0ENEN 23:00:10.3000013  0000E      30
+...
+
+
+
+
+
+}
+
+
+end.

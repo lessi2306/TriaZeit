@@ -1,0 +1,71 @@
+<html>
+<head>
+<Title>Abgleichen</Title>
+<link rel="stylesheet" type="text/css" href="TriaHilfe.css">
+<meta name="author" content="Gerhard Selten">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+<Object type="application/x-oleobject" classid="clsid:1e2a7bd0-dab9-11d0-b93a-00c04fc99f9e">
+	<param name="Keyword" value="Startnummern">
+	<param name="Keyword" value="einlesen">
+	<param name="Keyword" value="Startnummerndatei">
+	<param name="Keyword" value="Textdatei">
+	<param name="Keyword" value="abgleichen">
+	<param name="Keyword" value="Aktionsfeld">
+	<param name="Keyword" value="Zielkanal">
+</OBJECT>
+<h1>Startnummern abgleichen</h1>
+<p>
+Wenn die Teilnehmer im Zielbereich sehr kurz nacheinander eintreffen, ist es oft schwierig alle Startnummern korrekt zu erfassen. Insbesondere bei größeren Teilnehmerzahlen ist es deshalb zu empfehlen, im Zielbereich zwei getrennte Stationen für die Zeit- und Startnummernerfassung mit TriaZeit zu installieren. Um die Beibehaltung der Reihenfolge zu gewährleisten, sollte nach der Ziellinie zwischen beiden Stationen ein enger Kanal gebildet werden, in dem die Teilnehmer nicht mehr überholen dürfen.</p>
+<p>
+Beim Zieleinlauf müssen alle Zeiten der Teilnehmer erfasst werden, die Startnummern jedoch nur soweit die Umstände dies zulassen. Durch Drücken der Eingabe-Taste (ohne Eingabe einer Startnummer) wird die Uhrzeit mit der Startnummer 0 festgehalten. Am Ende des Zielkanals müssen dann alle Startnummern in der richtigen Reihenfolge erfasst werden. Die hierbei eingetragene Zeit hat nur Bedeutung für die Sortierung der Einträge.</p>
+<p>
+Nachdem alle Teilnehmer das Ziel erreicht haben, können die Startnummern aus einer solchen Startnummern-Datei in TriaZeit eingelesen und einen Abgleich mit den vorhandenen, bereits am Ziel eingetragenen Startnummern vorgenommen werden. Dazu werden diese Startnummern neben den vorhandenen Einträgen in einer gemeinsamen Liste dargestellt.</p>
+<p>
+Diese Funktion ist nur im Startnummer-Modus vorhanden.</p>
+<p>
+Das nachfolgende Bild zeigt den theoretischen Idealfall, in dem die Startnummern in beiden Dateien vollständig übereinstimmen.</p>
+<p>
+  <img src="img/abgl1.gif" alt="Abgleich1" width="523" height="549" border="0"></p>
+<p>
+Die Liste zeigt an der linken Seite die eingelesenen Startnummern, rechts die am Ziel eingetragenen und in der Datei bereits vorhandenen Startnummern und Uhrzeiten und dazwischen die beim Abgleich durchgeführte Aktionen. In diesem Fall sind alle Startnummern identisch und somit auch keine weiteren Aktionen erforderlich.</p>
+<p>
+Die Startnummern der Startnummerndatei werden der Reihe nach den Einträgen der Zeitdatei zugeordnet. Letztere sind nach aufsteigender Zeit sortiert. Diese Sortierung wird beim Abgleich in TriaZeit automatisch eingestellt, wenn dies nicht vorher der Fall sein sollte.</p>
+<p>
+Außer mit TriaZeit können die Startnummern z.B. auch mit einem Barcode-Scanner erfasst werden. Voraussetzung für das Einlesen in TriaZeit ist nur, dass die Nummern als Textdatei gespeichert werden mit am Anfang jeder Zeile eine 1- bis 4-stellige Startnummer. Der restliche Zeileninhalt wird ignoriert.<br>
+Wird TriaZeit zur Erstellung der Startnummerndatei verwendet, ist darauf zu achten, dass die Startnummern in der richtigen Reihenfolge gespeichert werden (nach Zeit aufwärts sortiert).</p>
+<br>
+<p>
+Das nächste Beispiel zeigt eine noch fast ideale Situation, wobei in der Zeitdatei mehrere Startnummern fehlen, aber die Zahl der Einträge und die vorhandenen Startnummern übereinstimmen. Die Zeilen mit fehlenden Startnummern sind in diesem Fall grün gefärbt.<p>
+<p>
+  <img src="img/abgl2.gif" alt="Abgleich2" width="523" height="549" border="0"></p>
+<p>
+Hier reicht einen Klick auf die "Alle abgleichen"-Schaltfläche um den Abgleich durchzuführen. Die Aktionen können aber auch Zeilenweise mit einem Mausklick auf das jeweilige Aktionsfeld durchgeführt werden.<br> 
+Die Änderungen werden nicht sofort sondern erst nach Betätigung der entsprechenden Schaltfläche in der Zeitdatei übernommen.</p>
+<br>
+<p>
+In der Regel werden die Einträge nicht ganz so perfekt übereinstimmen. Im nächsten Beispiel enthält die Zeitdatei zwischen den identischen Startnummern 104 und 108 einen Eintrag weniger als die Startnummerndatei. Deshalb wurde für die Zeitdatei am Ende dieses Blocks einen leeren Eintrag (rot gefärbt) hinzugefügt.</p>
+<p>
+Hier ist zunächst die Ursache der Differenz zu klären. Diese kann im ganzen Block liegen und deshalb sind die übrigen Zeilen nicht grün sondern gelb gefärbt.<br>
+Die Einträge in Startnummern- und Zeitdatei können dieser Liste beliebig korrigiert werden. Die Abgleich-Aktionen und Farben werden dabei automatisch angepasst.</p>
+<p>
+Ohne Korrekturen würde die Startnummer 107 beim Abgleich nicht übernommen werden.</p>
+<p>
+  <img src="img/abgl3.gif" alt="Abgleich3" width="523" height="548" border="0"></p>
+<p>
+Hier wird auch deutlich, dass die Abklärung in Problemfällen wesentlich erleichtert wird, wenn die Bereiche ohne Startnummern in der Zeitdatei möglichst klein sind. Bei der Zeitnahme im Ziel sollten deshalb möglichst viele Startnummern eingetragen werden.</p>
+<p>
+Neben fehlenden Einträgen sind auch falsche Startnummern, doppelte oder in der Reihenfolge vertauschte Einträge möglich. Auch kann es im Zielkanal zu unerlaubte Überholungen kommen. All diese Probleme können vor dem Abgleichen in der Liste manuell korrigiert werden.</p>
+<br>
+<p>
+Das nächste Beispiel zeigt zwei vertauschte Startnummern (104 und 105). Zeilen mit unterschiedlichen Startnummern werden grundsätzlich blau dargestellt.</p>
+<p>
+In der Liste wird immer vorausgesetzt, dass die Startnummern in der Startnummerndatei die richtigen sind. Falls der Fehler durch Überholen im Zielkanal entstanden sein sollte, müssten beide Startnummern korrigiert werden.<br>
+Außerdem ist im Block zwischen Startnummern 101 und 108 in der Zeitdatei einen Eintrag mehr vorhanden als in der Startnummerndatei. Ohne gültige Startnummer würde der letzte Eintrag im Block gelöscht werden.</p>
+<p>
+  <img src="img/abgl4.gif" alt="Abgleich4" width="523" height="550" border="0"></p>
+<p>
+Voraussetzung für eine übersichtliche und hilfreiche Darstellung in dieser Liste ist, dass die Einträge in beiden Dateien nicht zu stark voneinander abweichen. Bei einer sorgsamen Zeitnahme sollte dies aber auch gegeben sein.</p>
+</body>
+</html>

@@ -1,0 +1,109 @@
+; Text Pop-ups für TriaZeit
+.topic IDH_Home
+Für dieses Element ist kein Hilfethema vorhanden.
+
+.topic IDH_SnrEdit
+Geben Sie hier die Startnummer des zu erfassenden Teilnehmers ein. Durch Drucken der Eingabe-Taste wird diese zusammen mit der angezeigten Zeit in die Tabelle eingetragen.
+
+.topic IDH_ZeitEdit
+Zeigt die aktuelle Zeit, die durch Drucken der Eingabe-Taste mit der Teilnehmer-Startnummer in die Tabelle eingetragen wird.
+
+.topic IDH_Anzahl
+Zeigt wie oft die Startnummer insgesamt eingetragen wurde.
+
+.topic IDH_Name
+Zeigt der in der importierten Startliste eingetragenen Teilnehmername.
+ 
+.topic IDH_ZeitStart
+Startet die Stoppuhr.
+
+.topic IDH_Zeitnahme
+Überträgt die eingetragene Startnummer mit der angezeigten Zeit in die Tabelle.
+
+.topic IDH_Aendern
+Wechselt vom Zeitname- in den Editier-Modus.
+
+.topic IDH_Neu
+Fügt einen neuen Eintrag in die Tabelle ein.
+
+.topic IDH_Loeschen
+Löscht den markierten Eintrag in der Tabelle.
+
+.topic IDH_Tabelle
+Klicken Sie auf einen Eintrag in der Tabelle um diese zu bearbeiten.
+
+Klicken Sie auf eine Überschrift um die Tabelle nach Startnummer oder nach Zeit (aufwärts oder abwärts) zu sortieren. Die aktuelle Sortierung wird duch einen Pfeil gekennzeichnet.
+
+.topic IDH_Hilfe
+Zeigt eine Beschreibung dieses Dialogfensters.
+
+.topic IDH_Abbr
+Schließt das Dialogfenster, ohne die vorgenommenen Änderungen zu speichern.
+
+.topic IDH_Ok
+Speichert die vorgenommenen Änderungen und schließt das Dialogfenster.
+
+.topic IDH_OptVorg
+Die empfohlene Optionen werden eingestellt.
+
+.topic IDH_OptUpdate
+Beim Programmstart wird automatisch überprüft ob eine neuere Programmversion verfügbar ist.
+
+.topic IDH_OptStart
+Beim Programmstart wird die zuletzt benutzte Datei geöffnet. 
+
+.topic IDH_OptUhr
+Wenn das Kontrollkästchen nicht aktiviert ist, wird die Tagesuhrzeit für die Zeitnahme verwendet, andernfalls eine ab dem Start laufende Zeit.
+
+.topic IDH_OptBeep
+Bei jeder Zeitnahme kann ein akustisches Signal generiert werden.
+
+.topic IDH_OptZeitGleich
+Es kann verhindert weren, dass bei kurz aufeinander folgenden Zeitnahmen die gleiche Zeit zugeordnet wird.
+
+.topic IDH_OptZeitModus
+Bei der Zeiterfassung werden die Teilnehmer entweder mittels Startnummer oder RFID-Code identifiziert (Option auch in Tria).
+  
+.topic IDH_OptRfidZeichen
+Wenn der RFID-Zeitnahmemodus gewählt wird, kann die Länge der Chipnummern variabel von 2 bis 24 festgelegt werden  und es kann definiert werden ob der Code aus beliebige oder nur aus Hex-Zeichen besteht.
+Abweichende Codes (<= 24) können eingegeben werden, werden aber farbig gekennzeichnet.
+
+.topic IDH_OptFormat
+Die Zeiten können optional sowohl in Sekunden als auch in Zehntel- oder Hundertstelsekunden dargestellt werden.
+
+.topic IDH_OptTrennzeichen
+Als Trenzeichen bei Zehntel- oder Hundertstelsekunden kann entweder ein Komma oder einen Punkt gewählt werden.
+
+.topic IDH_OptSpeichern
+Die Datei kann bei Änderung automatisch nach einem hier festgelegtem Zeitinterval gespeichert werden.
+
+.topic IDH_OptSichern
+Wenn Sie das Kontrollkästchen aktivieren, wird bei jedem Speichervorgang automatisch eine Sicherungskopie mit der Dateierweiterung *.~trz angelegt. 
+
+.topic IDH_OptSpalteSnr
+Diese Spalte zeigt wie oft die Startnummer in der Tabelle insgesamt vorhanden ist.
+
+.topic IDH_OptSpalteName
+Diese Spalte zeigt der Name des mit der Startnummer gemeldeten Teilnehmers, wenn vorher eine Startliste importiert wurde.
+
+.topic IDH_AbglSnrDat
+Zeigt die geöffnete Startnummerndatei.
+
+.topic IDH_AbglZeitDat
+Zeigt die aktuell in TriaZeit geöffnete Zeiterfassungsdatei.
+
+.topic IDH_AbglUebersicht
+Zeigt einen Übersicht der durchzuführenden Abgleichaktionen.
+
+.topic IDH_AbglAnsicht
+Wählen Sie welche Abgleichaktionen dargestellt werden.
+
+.topic IDH_AbglTabelle
+Die Tabelle zeigt die Zuordnung der Startnummern aus der eingelesenen Startnummerndatei zu den in TriaZeit erfassten Einträgen, sowie die beim Abgleich durchgeführten Aktionen.
+  
+.topic IDH_Abgleichen
+Führt den Abgleich entsprechend den dargestellten Aktionen durch. Die Ergebnisse werden noch nicht in der Zeiterfassungsdatei übernommen. 
+
+.topic IDH_AbglUebern
+Alle durchgeführte Änderungen werden, wie in der rechten Tabellenseite dargestellt, in der Zeiterfassungsdatei übernommen.
+ 

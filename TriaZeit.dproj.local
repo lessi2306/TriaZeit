@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.584,D:\Tria\Projekte-XE2\TriaZeit-Projekt\Unit1.pas=D:\Tria\Projekte-XE2\TriaZeit-Projekt\Source\AWHookInstance.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.546,=D:\Tria\Projekte-XE2\TriaZeit-Projekt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.410,D:\Tria\Projekte-XE2\TriaZeit-Projekt\Source\AwDialogs.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.432,D:\Tria\Projekte-XE2\TriaZeit-Projekt\Source\AWHookInstance.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.407,=D:\Tria\Projekte-XE2\TriaZeit-Projekt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.444,D:\Tria\Projekte-XE2\TriaZeit-Projekt\Unit1.pas=D:\Tria\Projekte-XE2\TriaZeit-Projekt\Source\AwDialogs.pas</Transaction>
+  </Transactions>
+</BorlandProject>
