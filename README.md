@@ -1,3 +1,6 @@
 # TriaZeit
 Zeitnahmeprogramm für Tria
-Autor: Gerhard Selten
+
+_Autor: Gerhard Selten_
+
+last compiled with Delphi XE2 (newer Versions of Delphi not tested)
